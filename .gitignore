@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
@@ -39,3 +40,28 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# editors
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+
+# logs & coverage
+*.log
+coverage/
+.nyc_output/
+
+# Expo & Metro caches
+.expo-shared/
+.cache/
+metro-cache/
+
+# build outputs
+build/
+out/
+release/
+
+# ngrok config (if kept in repo)
+ngrok.yml
