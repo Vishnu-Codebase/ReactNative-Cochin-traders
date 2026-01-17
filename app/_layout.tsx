@@ -8,9 +8,11 @@ import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import AnimatedSplash from '@/components/AnimatedSplash';
-import { useColorScheme } from '@/components/useColorScheme';
+import ThemeToggle from '@/components/ThemeToggle';
+import Colors from '@/constants/Colors';
 import { CartProvider } from '@/context/CartContext';
-import { getEmployeeName, purgeLegacyStorage } from '@/lib/auth';
+import { ThemeProvider as CustomThemeProvider, useTheme } from '@/context/ThemeContext';
+
 import { CompanyProvider } from '../context/CompanyContext';
 
 export {
@@ -26,11 +28,11 @@ const LightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#ffffff',
-    card: '#ffffff',
-    text: '#000000',
-    border: '#cccccc',
-    primary: '#2563eb',
+    background: Colors.light.background,
+    card: Colors.light.card,
+    text: Colors.light.text,
+    border: Colors.light.border,
+    primary: Colors.light.tint,
   },
 };
 
@@ -38,11 +40,11 @@ const AppDarkTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#ffffff',
-    card: '#ffffff',
-    text: '#000000',
-    border: '#cccccc',
-    primary: '#2563eb',
+    background: Colors.dark.background,
+    card: Colors.dark.card,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+    primary: Colors.dark.tint,
   },
 };
 
@@ -66,58 +68,43 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <CustomThemeProvider>
+      <RootLayoutNav />
+    </CustomThemeProvider>
+  );
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const { theme } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
-  const [gateDone, setGateDone] = useState(false);
   
   useEffect(() => {
     let mounted = true;
     const init = async () => {
-      await purgeLegacyStorage();
-      // Ensure splash is visible for 3 seconds on app open
-      setShowSplash(true);
-      setTimeout(async () => {
-        if (!mounted) return;
-        setGateDone(true);
-        const name = await getEmployeeName();
-        if (name) {
-          setShowSplash(false);
-        } else {
-          setShowSplash(true);
-        }
-      }, 3000);
+      // Cleanup legacy storage if needed
+      try {
+        await AsyncStorage.removeItem('admin_user');
+        await AsyncStorage.removeItem('auth_token');
+      } catch (e) {
+        // Ignore errors
+      }
     };
     init();
-    // Watch for forced splash requests from other screens
-    const timer = setInterval(async () => {
-      if (!mounted) return;
-      if (!gateDone) return;
-      const flag = await AsyncStorage.getItem('force_splash');
-      const name = await getEmployeeName();
-      if (flag === '1') {
-        await AsyncStorage.removeItem('force_splash');
-        setShowSplash(true);
-        return;
-      }
-      if (!name) {
-        setShowSplash(true);
-      } else {
-        setShowSplash(false);
-      }
-    }, 500);
-    return () => { mounted = false; clearInterval(timer); };
+    return () => { mounted = false; };
   }, []);
 
   return (
-    <ThemeProvider value={LightTheme}>
+    <ThemeProvider value={theme === 'dark' ? AppDarkTheme : LightTheme}>
       {showSplash && <AnimatedSplash onDone={() => setShowSplash(false)} />}
       <CompanyProvider>
         <CartProvider>
-          <Stack screenOptions={{ animation: 'fade', headerStyle: { backgroundColor: '#2563eb' }, headerTintColor: '#fff' }}>
+          <Stack screenOptions={{ 
+            animation: 'fade', 
+            headerStyle: { backgroundColor: Colors[theme].navBar }, 
+            headerTintColor: '#fff',
+            headerRight: () => <ThemeToggle />
+          }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="Companies List" options={{ presentation: 'modal' }} />
             <Stack.Screen name="cart" options={{ title: 'Cart' }} />

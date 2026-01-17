@@ -1,6 +1,7 @@
+import ThemeToggle from '@/components/ThemeToggle';
 import { Link, Tabs } from 'expo-router';
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
@@ -22,12 +23,12 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
-        tabBarStyle: { backgroundColor: Colors[colorScheme ?? 'light'].tint },
+        tabBarStyle: { backgroundColor: Colors[colorScheme ?? 'light'].navBar },
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: true,
         headerRight: () => <CompanySelector />,
-        headerStyle: { backgroundColor: Colors[colorScheme ?? 'light'].tint },
+        headerStyle: { backgroundColor: Colors[colorScheme ?? 'light'].navBar },
         headerTintColor: '#fff',
       }}>
       <Tabs.Screen
@@ -36,7 +37,8 @@ export default function TabLayout() {
           title: 'Dashboard',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
-            <>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <ThemeToggle />
               <Link href="/modal" asChild>
                 <Pressable>
                   {({ pressed }) => (
@@ -45,7 +47,7 @@ export default function TabLayout() {
                 </Pressable>
               </Link>
               <CompanySelector />
-            </>
+            </View>
           ),
         }}
       />
@@ -54,6 +56,12 @@ export default function TabLayout() {
         options={{
           title: 'Outstanding',
           tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+               <ThemeToggle />
+               <CompanySelector />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -61,6 +69,12 @@ export default function TabLayout() {
         options={{
           title: 'Stocks',
           tabBarIcon: ({ color }) => <TabBarIcon name="archive" color={color} />,
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+               <ThemeToggle />
+               <CompanySelector />
+            </View>
+          ),
         }}
       />
     </Tabs>

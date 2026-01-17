@@ -1,85 +1,280 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, View, Text, Image, StyleSheet, TextInput } from 'react-native';
-import { BlurView } from 'expo-blur';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import Colors from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { employeeSignIn } from '@/lib/api';
-import { signIn, setEmployeeName, getEmployeeName } from '@/lib/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+type SplashState = 'splash' | 'signin' | 'done';
 
 export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
+  const { theme } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.95)).current;
-  const [done, setDone] = useState(false);
-  const [showInput, setShowInput] = useState(false);
+  
+  const [state, setState] = useState<SplashState>('splash');
+  const [employeeName, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [readyForInput, setReadyForInput] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
+  const colors = Colors[theme];
+
+  // Splash screen animation
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
-    ]).start(async () => {
-      const name = await getEmployeeName();
-      setTimeout(() => {
-        setReadyForInput(true);
-        if (!name) {
-          setTimeout(() => setShowInput(true), 2000);
-        }
-      }, 0);
-    });
-  }, []);
+    ]).start();
+  }, [opacity, scale]);
 
+  // Check employee on mount and handle splash duration
   useEffect(() => {
-    const fn = async () => {
-      const p = phone.replace(/\D+/g, '');
-      if (p.length === 10) {
-        try {
-          const resp = await employeeSignIn(p);
-          const token = resp?.token || resp?.employee?.token || resp?.id || p;
-          const empName = resp?.employee?.name || p;
-          await AsyncStorage.setItem('employee_phone', p);
-          await signIn(String(token));
-          await setEmployeeName(String(empName));
-          setMessage(`Welcome ${empName}`);
-          setTimeout(() => { setDone(true); onDone(); }, 500);
-        } catch (e) {
-          setMessage('Phone number is incorrect');
+    let timer: NodeJS.Timeout;
+    const init = async () => {
+      try {
+        const name = await AsyncStorage.getItem('employee_name');
+        console.log('Employee name from storage:', name);
+        if (name) {
+          // Employee exists, stay on splash for 3 seconds then close
+          timer = setTimeout(() => {
+            onDone();
+          }, 3000);
+        } else {
+          // No employee, show splash for 3 seconds then show signin
+          timer = setTimeout(() => {
+            setState('signin');
+          }, 3000);
         }
-      } else {
-        setMessage(null);
+      } catch (e) {
+        console.error('Error checking employee:', e);
+        // On error, show signin
+        timer = setTimeout(() => {
+          setState('signin');
+        }, 3000);
       }
     };
-    fn();
-  }, [phone]);
+    init();
+    return () => clearTimeout(timer);
+  }, [onDone]);
 
-  return (
-    <View style={styles.overlay}>
-      {showInput && <BlurView intensity={50} style={StyleSheet.absoluteFill} />}
-      <Animated.View style={[styles.box, { opacity, transform: [{ scale }] }] }>
-        <Image source={require('../assets/images/splash-icon.png')} style={styles.logo} />
-        <Text style={styles.title}>Cochin Traders</Text>
-        {message && <View style={styles.toast}><Text style={styles.toastText}>{message}</Text></View>}
-        {showInput && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter phone number"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-            maxLength={14}
+  const handleSignIn = async () => {
+    if (!employeeName.trim()) {
+      setError('Please enter employee name');
+      return;
+    }
+    if (!phone.replace(/\D+/g, '').match(/^\d{10}$/)) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const phoneClean = phone.replace(/\D+/g, '');
+      const resp = await employeeSignIn(phoneClean);
+      const token = resp?.token || resp?.employee?.token || resp?.id || phoneClean;
+      const empName = resp?.employee?.name || employeeName;
+      
+      // Save employee data to localStorage
+      await AsyncStorage.setItem('employee_phone', phoneClean);
+      await AsyncStorage.setItem('employee_token', String(token));
+      await AsyncStorage.setItem('employee_name', String(empName));
+      
+      setState('done');
+      setTimeout(() => {
+        onDone();
+      }, 500);
+    } catch (e) {
+      setError('Invalid phone number or sign-in failed. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  if (state === 'splash') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]} pointerEvents="auto">
+        <LinearGradient
+          colors={theme === 'dark' ? ['#030712', '#1f2937', '#030712'] : ['#ffffff', '#f3f4f6', '#e5e7eb']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
+          <Image
+            source={require('../assets/images/splash-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
-        )}
-      </Animated.View>
-    </View>
-  );
+          <Text style={[styles.companyName, { color: colors.text }]}>
+            Cochin Traders
+          </Text>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (state === 'signin') {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[styles.container, { backgroundColor: colors.background }]}
+        pointerEvents="auto"
+      >
+        <LinearGradient
+          colors={theme === 'dark' ? ['#030712', '#1f2937', '#030712'] : ['#ffffff', '#f3f4f6', '#e5e7eb']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.signinContent}>
+          <Animated.View style={[styles.signinBox, { opacity, transform: [{ scale }] }]}>
+            <Image
+              source={require('../assets/images/splash-icon.png')}
+              style={styles.signinLogo}
+              resizeMode="contain"
+            />
+            <Text style={[styles.signinCompanyName, { color: colors.text }]}>
+              Cochin Traders
+            </Text>
+            <Text style={[styles.signinSubtitle, { color: colors.tint }]}>
+              Employee Sign In
+            </Text>
+
+            <TextInput
+              style={[styles.input, { 
+                color: colors.text,
+                borderColor: colors.border,
+                backgroundColor: colors.card
+              }]}
+              placeholder="Employee Name"
+              placeholderTextColor={colors.tabIconDefault}
+              value={employeeName}
+              onChangeText={setName}
+              editable={!loading}
+            />
+
+            <TextInput
+              style={[styles.input, { 
+                color: colors.text,
+                borderColor: colors.border,
+                backgroundColor: colors.card
+              }]}
+              placeholder="Phone Number"
+              placeholderTextColor={colors.tabIconDefault}
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={setPhone}
+              maxLength={14}
+              editable={!loading}
+            />
+
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
+
+            <TouchableOpacity
+              style={[styles.submitButton, { 
+                backgroundColor: colors.tint,
+                opacity: loading ? 0.6 : 1
+              }]}
+              onPress={handleSignIn}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Signing In...' : 'Submit'}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  box: { alignItems: 'center' },
-  logo: { width: 160, height: 160, marginBottom: 16 },
-  title: { fontSize: 20, fontWeight: '700' },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 8, marginTop: 16, minWidth: 240 },
-  toast: { position: 'absolute', top: -60, backgroundColor: '#111827', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6 },
-  toastText: { color: '#fff' },
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 160,
+    height: 160,
+    marginBottom: 24,
+    resizeMode: 'contain',
+  },
+  companyName: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  signinContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  signinBox: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  signinLogo: {
+    width: 120,
+    height: 120,
+    marginBottom: 20,
+    resizeMode: 'contain',
+  },
+  signinCompanyName: {
+    fontSize: 26,
+    fontWeight: '700',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  signinSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 24,
+  },
+  input: {
+    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  submitButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  submitButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
 });

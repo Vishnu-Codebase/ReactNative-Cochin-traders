@@ -3,7 +3,7 @@
  * https://docs.expo.io/guides/color-schemes/
  */
 
-import { Text as DefaultText, View as DefaultView } from 'react-native';
+import { Text as DefaultText, TextInput as DefaultTextInput, View as DefaultView } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -15,6 +15,7 @@ type ThemeProps = {
 
 export type TextProps = ThemeProps & DefaultText['props'];
 export type ViewProps = ThemeProps & DefaultView['props'];
+export type TextInputProps = ThemeProps & DefaultTextInput['props'];
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
@@ -42,4 +43,24 @@ export function View(props: ViewProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
 
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
+}
+
+export function TextInput(props: TextInputProps) {
+  const { style, lightColor, darkColor, ...otherProps } = props;
+  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const placeholderColor = useThemeColor({ light: lightColor, dark: darkColor }, 'tabIconDefault');
+
+  // Default to transparent background so inputs visually match card/container backgrounds
+  // Add web-specific overrides to remove browser default input backgrounds/shadows
+  const webOverrides: any = {
+    backgroundColor: 'transparent',
+    boxShadow: 'none',
+    outlineWidth: 0,
+    // vendor prefixed may be needed on some browsers
+    WebkitBoxShadow: 'none',
+    WebkitAppearance: 'none',
+    appearance: 'none',
+  };
+
+  return <DefaultTextInput style={[{ color }, webOverrides, style]} placeholderTextColor={otherProps.placeholderTextColor || placeholderColor} {...otherProps} />;
 }

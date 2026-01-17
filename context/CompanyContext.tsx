@@ -22,46 +22,62 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     try {
       if (typeof localStorage !== 'undefined') {
         const raw = localStorage.getItem(STORAGE_KEY);
+        console.log('CompanyContext - loadFromStorage (web):', raw);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
+            console.log('CompanyContext - loaded companies:', parsed);
             setCompanies(parsed);
-            if (!selected && parsed.length > 0) setSelected(parsed[0].companyName);
+            if (!selected && parsed.length > 0) {
+              console.log('CompanyContext - setting selected to:', parsed[0].companyName);
+              setSelected(parsed[0].companyName);
+            }
           }
         }
       } else {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        console.log('CompanyContext - loadFromStorage (native):', raw);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
+            console.log('CompanyContext - loaded companies:', parsed);
             setCompanies(parsed);
-            if (!selected && parsed.length > 0) setSelected(parsed[0].companyName);
+            if (!selected && parsed.length > 0) {
+              console.log('CompanyContext - setting selected to:', parsed[0].companyName);
+              setSelected(parsed[0].companyName);
+            }
           }
         }
       }
     } catch (e) {
-      // ignore
+      console.error('CompanyContext - loadFromStorage error:', e);
     }
   }
 
   async function refresh() {
     try {
+      console.log('CompanyContext - refresh called');
       const res = await getCompanyNames();
+      console.log('CompanyContext - getCompanyNames response:', res);
       if (res && res.data) {
         const list = res.data || [];
+        console.log('CompanyContext - setting companies:', list);
         setCompanies(list);
-        if (!selected && list && list.length > 0) setSelected(list[0].companyName);
+        if (!selected && list && list.length > 0) {
+          console.log('CompanyContext - setting selected to:', list[0].companyName);
+          setSelected(list[0].companyName);
+        }
         // persist
         try {
           const raw = JSON.stringify(list);
           if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, raw);
           else await AsyncStorage.setItem(STORAGE_KEY, raw);
         } catch (e) {
-          // ignore
+          console.error('CompanyContext - persist error:', e);
         }
       }
     } catch (e) {
-      // ignore errors silently
+      console.error('CompanyContext - refresh error:', e);
     }
   }
 

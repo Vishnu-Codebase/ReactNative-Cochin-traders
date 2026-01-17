@@ -1,6 +1,7 @@
 import { useCart } from '@/context/CartContext';
 import { useEffect, useState } from 'react';
-import { Animated, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Animated, FlatList, Pressable, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View as DefaultView } from 'react-native';
+import { Text, View, useThemeColor } from '@/components/Themed';
 import ShopInput from '../components/trader/ShopInput';
 import { useCompany } from '../context/CompanyContext';
 import { getCompanyParties } from '../lib/api';
@@ -109,12 +110,12 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 16 },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
-  listItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  listItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1 },
   inputWrap: { position: 'relative', marginVertical: 8, zIndex: 1 },
-  suggestions: { position: 'absolute', top: 44, left: 0, right: 0, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 6, maxHeight: 200, zIndex: 1, elevation: 8, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-  suggestionItem: { paddingVertical: 8, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  suggestions: { position: 'absolute', top: 44, left: 0, right: 0, borderWidth: 1, borderRadius: 6, maxHeight: 200, zIndex: 1, elevation: 8, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  suggestionItem: { paddingVertical: 8, paddingHorizontal: 10, borderBottomWidth: 1 },
   proceedButton: { backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
   proceedButtonText: { color: '#fff', fontWeight: '600' },
 });

@@ -1,4 +1,4 @@
-const baseUrl = process.env.BASE_URL || 'http://localhost:3000/api';
+const baseUrl = process.env.BASE_URL || 'https://cochintraders.loca.lt/api';
  
 const ADMIN_PIN = process.env.ADMIN_PIN || '3133';
 
@@ -29,6 +29,10 @@ export async function getCompanyParties(companyName: string) {
 
 export async function getCompanyStocks(companyName: string) {
   return getJson(`/stocks/${encodeURIComponent(companyName)}`);
+}
+
+export async function getCompanyLedgers(companyName: string) {
+  return getJson(`/ledgers/${encodeURIComponent(companyName)}`);
 }
 
 export async function createOrder(payload: { shopName: string; items: { id: string; qty: number }[] }) {

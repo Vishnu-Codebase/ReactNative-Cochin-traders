@@ -1,17 +1,19 @@
 import StockList from '@/components/stocks/StockList';
 import StockSearch from '@/components/stocks/StockSearch';
+import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import { useCart } from '@/context/CartContext';
 import { useCompany } from '@/context/CompanyContext';
 import { getCompanyStocks } from '@/lib/api';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function StocksScreen() {
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<{ id: string; name: string; qty: number }[]>([]);
   const cart = useCart();
   const router = useRouter();
+  const borderColor = useThemeColor({}, 'tabIconDefault');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalItem, setModalItem] = useState<{ id: string; name: string; qty: number } | null>(null);
@@ -62,8 +64,8 @@ export default function StocksScreen() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{modalItem?.name}</Text>
               <Text style={{ marginBottom: 8 }}>Available: {modalItem?.qty ?? 0}</Text>
-              <TextInput keyboardType="numeric" placeholder="Pieces" value={pieces} onChangeText={setPieces} style={styles.modalInput} />
-              <TextInput keyboardType="numeric" placeholder="Sets" value={sets} onChangeText={setSets} style={styles.modalInput} />
+              <TextInput keyboardType="numeric" placeholder="Pieces" value={pieces} onChangeText={setPieces} style={[styles.modalInput, { borderColor: borderColor }]} />
+              <TextInput keyboardType="numeric" placeholder="Sets" value={sets} onChangeText={setSets} style={[styles.modalInput, { borderColor: borderColor }]} />
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
                 <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}><Text>Cancel</Text></Pressable>
                 <Pressable onPress={() => {
@@ -85,7 +87,7 @@ export default function StocksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 16 },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
   input: { },
   listItem: { },
@@ -94,8 +96,8 @@ const styles = StyleSheet.create({
   cartButton: { position: 'absolute', bottom: 16, right: 16, backgroundColor: '#2563eb', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 9999 },
   cartButtonText: { color: '#fff', fontWeight: '600' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalContent: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+  modalContent: { padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
   modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
   modalInput: { borderWidth: 1, borderColor: '#ddd', padding: 8, borderRadius: 8, marginBottom: 8 },
-  modalButton: { paddingVertical: 8, paddingHorizontal: 12 },
+  modalButton: { padding: 8 },
 });

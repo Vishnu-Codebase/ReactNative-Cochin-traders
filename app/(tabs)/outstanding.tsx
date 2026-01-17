@@ -1,7 +1,8 @@
 import ReceivableList from '@/components/outstanding/ReceivableList';
+import { TextInput, View } from '@/components/Themed';
 import { getCompanyParties } from '@/lib/api';
 import { useEffect, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useCompany } from '../../context/CompanyContext';
 
 export default function OutstandingScreen() {
@@ -44,7 +45,7 @@ export default function OutstandingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 16 },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
   search: { borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 12, marginBottom: 10 },
   listItem: { },
