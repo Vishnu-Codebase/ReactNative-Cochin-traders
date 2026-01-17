@@ -1,12 +1,12 @@
 import Colors from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
-import { employeeSignIn } from '@/lib/api';
+import { employeeSignIn, getCompanyNames } from '@/lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-type SplashState = 'splash' | 'signin' | 'done';
+type SplashState = 'splash' | 'signin' | 'done' | 'error';
 
 export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
   const { theme } = useTheme();
@@ -29,30 +29,39 @@ export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
     ]).start();
   }, [opacity, scale]);
 
-  // Check employee on mount and handle splash duration
+  // Check employee on mount and handle splash duration with API test
   useEffect(() => {
     let timer: NodeJS.Timeout | number;
     const init = async () => {
       try {
         const name = await AsyncStorage.getItem('employee_name');
         console.log('Employee name from storage:', name);
-        if (name) {
-          // Employee exists, stay on splash for 3 seconds then close
-          timer = setTimeout(() => {
-            onDone();
-          }, 3000);
-        } else {
-          // No employee, show splash for 3 seconds then show signin
-          timer = setTimeout(() => {
-            setState('signin');
-          }, 3000);
+        
+        // Test API by fetching company names
+        try {
+          console.log('Testing API...');
+          await getCompanyNames();
+          console.log('API test passed');
+          
+          // API works, show splash for 2 seconds then proceed
+          if (name) {
+            timer = setTimeout(() => {
+              onDone();
+            }, 2000);
+          } else {
+            timer = setTimeout(() => {
+              setState('signin');
+            }, 2000);
+          }
+        } catch (apiErr) {
+          console.error('API test failed:', apiErr);
+          // API failed, show error
+          setState('error');
+          return;
         }
       } catch (e) {
         console.error('Error checking employee:', e);
-        // On error, show signin
-        timer = setTimeout(() => {
-          setState('signin');
-        }, 3000);
+        setState('error');
       }
     };
     init();
@@ -193,6 +202,51 @@ export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
     );
   }
 
+  if (state === 'error') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]} pointerEvents="auto">
+        <LinearGradient
+          colors={theme === 'dark' ? ['#030712', '#1f2937', '#030712'] : ['#ffffff', '#f3f4f6', '#e5e7eb']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.errorContent}>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Server Error</Text>
+          <Text style={[styles.errorMessage, { color: colors.tabIconDefault }]}>
+            Server App (Cochin Connect) is not opened in server
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: colors.tint }]}
+            onPress={() => {
+              setState('splash');
+              const init = async () => {
+                try {
+                  const name = await AsyncStorage.getItem('employee_name');
+                  try {
+                    await getCompanyNames();
+                    if (name) {
+                      setTimeout(() => onDone(), 2000);
+                    } else {
+                      setTimeout(() => setState('signin'), 2000);
+                    }
+                  } catch (apiErr) {
+                    setState('error');
+                  }
+                } catch (e) {
+                  setState('error');
+                }
+              };
+              init();
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return null;
 }
 
@@ -278,5 +332,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  errorContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  retryButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
