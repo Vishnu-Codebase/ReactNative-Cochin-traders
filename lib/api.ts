@@ -4,9 +4,14 @@ const ADMIN_PIN = process.env.ADMIN_PIN || '3133';
 
 async function getJson(path: string) {
   const headers: Record<string, string> = { 'admin_pin': ADMIN_PIN };
-  const res = await fetch(`${baseUrl}${path}`, { headers });
-  if (!res.ok) throw new Error('Network error');
-  return res.json();
+  try {
+    const res = await fetch(`${baseUrl}${path}`, { headers });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  } catch (error) {
+    console.error(`Failed to fetch ${path}:`, error);
+    throw error;
+  }
 }
 
 export async function getTraderStocks(query?: string) {

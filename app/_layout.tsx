@@ -75,7 +75,6 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { theme } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   
   useEffect(() => {
@@ -94,8 +93,16 @@ function RootLayoutNav() {
   }, []);
 
   return (
+    <StackContent showSplash={showSplash} onDone={() => setShowSplash(false)} />
+  );
+}
+
+function StackContent({ showSplash, onDone }: { showSplash: boolean; onDone: () => void }) {
+  const { theme } = useTheme();
+  
+  return (
     <ThemeProvider value={theme === 'dark' ? AppDarkTheme : LightTheme}>
-      {showSplash && <AnimatedSplash onDone={() => setShowSplash(false)} />}
+      {showSplash && <AnimatedSplash onDone={onDone} />}
       <CompanyProvider>
         <CartProvider>
           <Stack screenOptions={{ 
@@ -105,7 +112,6 @@ function RootLayoutNav() {
             headerRight: () => <ThemeToggle />
           }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="Companies List" options={{ presentation: 'modal' }} />
             <Stack.Screen name="cart" options={{ title: 'Cart' }} />
           </Stack>
         </CartProvider>

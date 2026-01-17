@@ -31,7 +31,7 @@ export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
 
   // Check employee on mount and handle splash duration
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | number;
     const init = async () => {
       try {
         const name = await AsyncStorage.getItem('employee_name');
