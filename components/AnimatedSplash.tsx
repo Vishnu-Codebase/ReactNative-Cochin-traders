@@ -108,7 +108,7 @@ export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={[styles.companyName, { color: colors.text }]}>
+          <Text style={[styles.companyName, { color: colors.text, fontStyle: 'italic' }]}>
             Cochin Traders
           </Text>
         </Animated.View>
@@ -136,7 +136,7 @@ export default function AnimatedSplash({ onDone }: { onDone: () => void }) {
               style={styles.signinLogo}
               resizeMode="contain"
             />
-            <Text style={[styles.signinCompanyName, { color: colors.text }]}>
+            <Text style={[styles.signinCompanyName, { color: colors.text, fontStyle: 'italic' }]}>
               Cochin Traders
             </Text>
             <Text style={[styles.signinSubtitle, { color: colors.tint }]}>
@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: 0.5,
+    fontStyle: 'italic',
   },
   signinContent: {
     flex: 1,
@@ -243,6 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 8,
     letterSpacing: 0.5,
+    fontStyle: 'italic',
   },
   signinSubtitle: {
     fontSize: 14,

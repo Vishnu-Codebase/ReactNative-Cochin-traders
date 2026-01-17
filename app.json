@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "cochin-traders-app",
+    "name": "Cochin Traders",
     "slug": "cochin-traders-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/adaptive-icon.png",
     "scheme": "cochintradersapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/adaptive-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -28,7 +28,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/adaptive-icon.png"
     },
     "plugins": [
       "expo-router",
@@ -40,8 +40,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7709c32a-2af0-4c4d-9a5c-e4881b06d36d"
+        "projectId": "2257af62-50c4-4456-bdee-0c73c34ed9df"
       }
-    }
+    },
+    "owner": "vishnurajagopal-pixel"
   }
 }
