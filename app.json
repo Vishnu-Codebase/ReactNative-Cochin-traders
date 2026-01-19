@@ -23,8 +23,7 @@
       },
       "splash": {
         "image": "./assets/images/splash-icon.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#005C97"
+        "resizeMode": "contain"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

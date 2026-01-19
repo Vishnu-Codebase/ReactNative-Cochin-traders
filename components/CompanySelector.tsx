@@ -10,6 +10,7 @@ export default function CompanySelector() {
   const contentBg = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subColor = useThemeColor({ light: '#666', dark: '#aaa' }, 'text');
+  const buttonPrimary = useThemeColor({}, 'buttonPrimary');
 
   useEffect(() => {
     // console.log('CompanySelector - selected:', selected);
@@ -39,7 +40,7 @@ export default function CompanySelector() {
               )}
             />
             <Pressable onPress={() => setOpen(false)} style={styles.closeButton}>
-              <Text style={styles.closeText}>Close</Text>
+              <Text style={[styles.closeText, { backgroundColor: buttonPrimary }]}>Close</Text>
             </Pressable>
           </View>
         </DefaultView>

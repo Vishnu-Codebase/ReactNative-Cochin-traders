@@ -1,7 +1,7 @@
 // api.ts
 const baseUrl =
   process.env.BASE_URL ||
-  "https://christa-unbeset-nondeafeningly.ngrok-free.dev/api";
+  "https://reparative-fluxionary-lynwood.ngrok-free.dev/api";
 
 async function getJson(path: string) {
   try {
@@ -14,6 +14,13 @@ async function getJson(path: string) {
     clearTimeout(timeoutId);
 
     if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.toLowerCase().includes("application/json")) {
+      const text = await res.text();
+      throw new Error(
+        `Non-JSON response (${ct}) for ${path}: ${text.substring(0, 120)}`,
+      );
+    }
     return res.json();
   } catch (error) {
     console.error(`Failed to fetch ${path}:`, error);
@@ -32,7 +39,11 @@ export async function getTraderReceivables() {
 
 // New: Tally API helpers
 export async function getCompanyNames() {
-  return getJson("/company-names");
+  try {
+    return await getJson("/company-names");
+  } catch {
+    return { data: [] };
+  }
 }
 
 export async function getCompanyParties(companyName: string) {

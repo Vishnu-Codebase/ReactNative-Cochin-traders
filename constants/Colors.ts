@@ -23,7 +23,7 @@ export default {
     tabIconDefault: '#9ca3af',
     tabIconSelected: tintColorDark,
     navBar: '#1f2937',     // Dark nav bar (instead of tint color which might be too bright or weird)
-    buttonPrimary: tintColorDark,
+    buttonPrimary: '#780206',
     iconSelected: tintColorDark,
   },
 };

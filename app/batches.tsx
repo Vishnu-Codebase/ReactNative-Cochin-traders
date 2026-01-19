@@ -20,6 +20,7 @@ export default function BatchesScreen() {
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const cardBg = useThemeColor({}, 'card');
+  const buttonPrimary = useThemeColor({}, 'buttonPrimary');
 
   // Fetch stocks
   useEffect(() => {
@@ -164,7 +165,7 @@ export default function BatchesScreen() {
                 {selectedStock.$Name || selectedStock.Name || ''}
               </Text>
               <TouchableOpacity
-                style={styles.changeButton}
+                style={[styles.changeButton, { backgroundColor: buttonPrimary }]}
                 onPress={() => setSelectedStock(null)}
               >
                 <Text style={styles.changeButtonText}>Change</Text>
@@ -195,7 +196,7 @@ export default function BatchesScreen() {
             </DefaultView>
 
             <TouchableOpacity
-              style={[styles.submitButton, { opacity: loading ? 0.6 : 1 }]}
+              style={[styles.submitButton, { backgroundColor: buttonPrimary, opacity: loading ? 0.6 : 1 }]}
               onPress={handleSubmitBatch}
               disabled={loading}
             >
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedStockName: { fontSize: 15, fontWeight: '600' },
-  changeButton: { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#2563eb', borderRadius: 6 },
+  changeButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
   changeButtonText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   sizesGrid: {
     flexDirection: 'row',
@@ -261,7 +262,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   submitButton: {
-    backgroundColor: '#780206',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

@@ -26,6 +26,7 @@ export default function StocksScreen() {
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "tabIconDefault");
   const cardBg = useThemeColor({}, "card");
+  const buttonPrimary = useThemeColor({}, "buttonPrimary");
   const cart = useCart();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -269,7 +270,7 @@ export default function StocksScreen() {
               </DefaultView>
 
               <TouchableOpacity
-                style={[styles.addButton, { marginTop: 12 }]}
+                style={[styles.addButton, { marginTop: 12, backgroundColor: buttonPrimary }]}
                 onPress={() => {
                   setModalItem(item);
                   setQuantities({});
@@ -288,14 +289,14 @@ export default function StocksScreen() {
                   setModalVisible(true);
                 }}
               >
-                <Text style={styles.addButtonText}>+ Add to Cart</Text>
+                <Text style={styles.addButtonText}>Add to Cart</Text>
               </TouchableOpacity>
             </DefaultView>
           )}
         />
       )}
       <TouchableOpacity
-        style={styles.cartButton}
+        style={[styles.cartButton, { backgroundColor: buttonPrimary }]}
         onPress={() => router.push("/cart")}
       >
         <Text style={styles.cartButtonText}>Open Cart</Text>
@@ -406,9 +407,9 @@ export default function StocksScreen() {
               >
                 <Pressable
                   onPress={() => setModalVisible(false)}
-                  style={styles.modalButton}
+                  style={[styles.modalButton, { backgroundColor: buttonPrimary }]}
                 >
-                  <Text style={{ color: textColor }}>Cancel</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>Cancel</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => {
@@ -435,9 +436,9 @@ export default function StocksScreen() {
 
                     setModalVisible(false);
                   }}
-                  style={[styles.modalButton, { marginLeft: 8 }]}
+                  style={[styles.modalButton, { marginLeft: 8, backgroundColor: buttonPrimary }]}
                 >
-                  <Text style={{ color: "#2563eb", fontWeight: "700" }}>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
                     OKAY
                   </Text>
                 </Pressable>

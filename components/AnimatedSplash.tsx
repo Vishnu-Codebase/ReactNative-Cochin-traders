@@ -98,7 +98,7 @@ export default function AnimatedSplash() {
         style={[styles.content, { opacity, transform: [{ scale }] }]}
       >
         <Animated.Image
-          source={require("../assets/images/splash-icon.png")}
+          source={require("@/assets/images/splash-icon.png")}
           style={[styles.logo, { transform: [{ translateY: iconBounce }] }]}
           resizeMode="contain"
         />
@@ -122,7 +122,7 @@ export default function AnimatedSplash() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  content: { justifyContent: "center", alignItems: "center" },
-  logo: { width: 80, height: 80, marginBottom: 16 },
-  companyName: { fontSize: 28, fontWeight: "700", marginTop: 12 },
+  content: { justifyContent: "center", alignItems: "center", backgroundColor: "transparent" },
+  logo: { width: 80, height: 80, marginBottom: 16, backgroundColor: "transparent" },
+  companyName: { fontSize: 28, fontWeight: "700", marginTop: 12, color: "#e0e0e0ff" },
 });
