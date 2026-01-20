@@ -7,31 +7,81 @@ import { useCompany } from "@/context/CompanyContext";
 import { getCompanyParties, submitPunchIn } from "@/lib/api";
 import * as Location from "expo-location";
 import React, { memo, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { Alert, BackHandler, StyleSheet, TouchableOpacity } from "react-native";
 
 type Props = {
   employeeName?: string | null;
   employeePhone?: string | null;
 };
 
-export default memo(function PunchCard({
-  employeeName,
-  employeePhone,
-}: Props) {
+export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
   const { selected: companyName } = useCompany();
   const [shopName, setShopName] = useState("");
   const [amount, setAmount] = useState("");
-  const [parties, setParties] = useState<{ name: string; closingBalance: number }[]>([]);
+  const [parties, setParties] = useState<
+    { name: string; closingBalance: number }[]
+  >([]);
   const [showParties, setShowParties] = useState(false);
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [successInfo, setSuccessInfo] = useState<{ shopName: string; amount: number; location?: string; time?: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{
+    shopName: string;
+    amount: number;
+    location?: string;
+    time?: string;
+  } | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
+    null,
+  );
   const cardBg = useThemeColor({}, "card");
   const borderColor = useThemeColor({}, "tabIconDefault");
   const buttonPrimary = useThemeColor({}, "buttonPrimary");
   // const clearBg = useThemeColor({}, 'clearBg');
+
+  useEffect(() => {
+    let subscription: Location.LocationSubscription | null = null;
+    (async () => {
+      const current = await Location.getForegroundPermissionsAsync();
+      if (current.status !== "granted") {
+        Alert.alert(
+          "Location Required",
+          "This app needs location access to work properly. The app will now close.",
+          [{ text: "OK", onPress: () => BackHandler.exitApp() }],
+        );
+        const requested = await Location.requestForegroundPermissionsAsync();
+        if (requested.status !== "granted") {
+          Alert.alert(
+            "Location Required",
+            "Permission not granted. The app will now close.",
+            [{ text: "OK", onPress: () => BackHandler.exitApp() }],
+          );
+          return;
+        }
+      } else {
+        try {
+          const loc = await Location.getCurrentPositionAsync({});
+          setCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
+        } catch {}
+      }
+      subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 1000,
+          distanceInterval: 1,
+        },
+        (loc) => {
+          setCoords({
+            lat: loc.coords.latitude,
+            lon: loc.coords.longitude,
+          });
+        },
+      );
+    })();
+    return () => {
+      if (subscription) subscription.remove();
+    };
+  }, []);
 
   // Fetch parties
   useEffect(() => {
@@ -59,43 +109,9 @@ export default memo(function PunchCard({
       });
   }, [companyName]);
 
-
-  // Fetch coordinates using Expo Location only
-  useEffect(() => {
-    let isMounted = true;
-    setLocationLoading(true);
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          if (isMounted) {
-            setCoords(null);
-            setLocationLoading(false);
-          }
-          return;
-        }
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (isMounted) {
-          setCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
-          setLocationLoading(false);
-        }
-      } catch {
-        if (isMounted) {
-          setCoords(null);
-          setLocationLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const locText =
-    locationLoading
-      ? "Loading location..."
-      : (coords ? `Lat: ${coords.lat.toFixed(5)} & Lon: ${coords.lon.toFixed(5)}` : "Location unavailable");
+  const locText = coords
+    ? `lat: ${coords.lat.toFixed(6)} lon: ${coords.lon.toFixed(6)}`
+    : "-";
 
   const handlePress = async () => {
     if (submitting) return;
@@ -103,7 +119,7 @@ export default memo(function PunchCard({
     if (!shopName.trim()) {
       Alert.alert(
         "Missing Shop",
-        "Please enter shop/party name before punching in."
+        "Please enter shop/party name before punching in.",
       );
       return;
     }
@@ -112,27 +128,12 @@ export default memo(function PunchCard({
     if (amt <= 0) {
       Alert.alert(
         "Missing Amount",
-        "Please enter a valid amount before punching in."
+        "Please enter a valid amount before punching in.",
       );
       return;
     }
 
-    const perm = await Location.getForegroundPermissionsAsync();
-    if (perm.status !== "granted") {
-      Alert.alert(
-        "Enable Location",
-        "Please enable location access to punch."
-      );
-      return;
-    }
-
-    if (!coords || locationLoading) {
-      Alert.alert(
-        "Missing Location",
-        "Location not available. Please wait for GPS."
-      );
-      return;
-    }
+    // Location not required
 
     const now = new Date();
     const payload = {
@@ -141,7 +142,9 @@ export default memo(function PunchCard({
       companyName: companyName || "",
       shopName,
       amount: amt,
-      location: `Lat: ${coords.lat.toFixed(5)} & Lon: ${coords.lon.toFixed(5)}`,
+      location: coords
+        ? { lat: coords.lat, lng: coords.lon }
+        : { lat: 0, lng: 0 },
       time: now.toLocaleTimeString(),
       date: now.toLocaleDateString(),
     };
@@ -151,7 +154,12 @@ export default memo(function PunchCard({
       console.log("📤 Submitting punch in:", payload);
       await submitPunchIn(payload);
       console.log("✅ Punch in successful");
-      setSuccessInfo({ shopName, amount: amt, location: payload.location, time: payload.time });
+      setSuccessInfo({
+        shopName,
+        amount: amt,
+        location: locText,
+        time: payload.time,
+      });
       setShowSuccess(true);
       setShopName("");
       setAmount("");
@@ -162,7 +170,6 @@ export default memo(function PunchCard({
       setSubmitting(false);
     }
   };
-
   return (
     <>
       <View style={[styles.card, { backgroundColor: cardBg }]}>
@@ -212,25 +219,19 @@ export default memo(function PunchCard({
           style={[styles.input, { borderColor: borderColor }]}
         />
 
-        <View style={[styles.row, { backgroundColor: "transparent" }]}>
-          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: "transparent" }}>
-            {locationLoading && <ActivityIndicator size="small" style={{ marginRight: 8 }} />}
-            <Text style={styles.location} numberOfLines={2}>
-              {locText}
-            </Text>
-          </View>
-        </View>
+        {/* Location removed */}
+        <Text style={styles.location}>{locText}</Text>
 
         <TouchableOpacity
           style={[
             styles.primaryButton,
             {
               backgroundColor: buttonPrimary,
-              opacity: submitting || locationLoading ? 0.6 : 1,
+              opacity: submitting ? 0.6 : 1,
             },
           ]}
           onPress={handlePress}
-          disabled={submitting || locationLoading}
+          disabled={submitting}
         >
           <Text style={styles.primaryButtonText}>
             {submitting ? "Submitting..." : "Punch In"}

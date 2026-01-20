@@ -1,4 +1,4 @@
-import { getCoords } from './getCoords';
+import * as Location from 'expo-location';
 
 export async function getAddressFromCoords(lat: number, lon: number, apiKey: string): Promise<string | null> {
   if (!apiKey) return null;
@@ -23,10 +23,41 @@ export async function getAddressFromCoords(lat: number, lon: number, apiKey: str
 
 export async function getUserAddress(apiKey: string): Promise<string | null> {
   try {
-    const coords = await getCoords();
-    if (!coords) return null;
-    console.log("📍 Using coords:", coords.latitude, coords.longitude);
-    const address = await getAddressFromCoords(coords.latitude, coords.longitude, apiKey);
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      console.warn("❌ Location permission not granted");
+      return null;
+    }
+
+    const servicesEnabled = await Location.hasServicesEnabledAsync();
+    if (!servicesEnabled) {
+      console.warn("❌ Location services disabled");
+      return null;
+    }
+
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    try {
+      const location = await Location.getCurrentPositionAsync({});
+      latitude = location.coords.latitude;
+      longitude = location.coords.longitude;
+      console.log("📍 Current coords:", latitude, longitude);
+    } catch (e) {
+      console.warn("❌ Current position unavailable, trying last known");
+      const last = await Location.getLastKnownPositionAsync();
+      if (last) {
+        latitude = last.coords.latitude;
+        longitude = last.coords.longitude;
+        console.log("📍 Last known coords:", latitude, longitude);
+      }
+    }
+
+    if (latitude == null || longitude == null) {
+      return null;
+    }
+
+    const address = await getAddressFromCoords(latitude, longitude, apiKey);
     return address;
   } catch (e) {
     console.warn("❌ getUserAddress overall failure");

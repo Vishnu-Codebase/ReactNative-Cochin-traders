@@ -1,6 +1,6 @@
-import { TextInput, useThemeColor } from '@/components/Themed';
+import { useThemeColor } from '@/components/Themed';
 import React, { memo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 type Props = { value: string; onChange: (v: string) => void; onClear?: () => void; showClear?: boolean };
@@ -20,24 +20,20 @@ export default memo(function ShopInput({ value, onChange, onClear, showClear }: 
 
   return (
     <View style={styles.wrap}>
-         <TextInput
-           style={[
-             styles.input,
-             showClear ? { paddingRight: 36 } : null,
-             // apply themed colors last so they override any platform default styles
-             { borderColor: borderColor, color: textColor, backgroundColor: clearBg },
-           ]}
-           underlineColorAndroid="transparent"
-           placeholder="Enter shop name"
-           placeholderTextColor={useThemeColor({}, 'tabIconDefault')}
-           value={value}
-           onChangeText={onChange}
-           // web-specific: remove autofill background and default appearance
-           allowFontScaling={false}
-         />
+      <TextInput 
+        style={[
+            styles.input, 
+            { color: textColor, borderColor: borderColor }, 
+            showClear ? { paddingRight: 36 } : null
+        ]} 
+        placeholder="Enter shop name" 
+        placeholderTextColor="#999"
+        value={value} 
+        onChangeText={onChange} 
+      />
       {showClear ? (
         <Pressable style={[styles.clear, { backgroundColor: clearBg }]} onPress={onClear}>
-          <Icon name="close" size={18} color={iconColor} style={{ backgroundColor: clearBg }} />
+          <Icon name="close" size={18} color={iconColor} />
         </Pressable>
       ) : null}
     </View>
@@ -46,6 +42,6 @@ export default memo(function ShopInput({ value, onChange, onClear, showClear }: 
 
 const styles = StyleSheet.create({
   wrap: { position: 'relative' },
-  input: { borderWidth: 1, padding: 8, borderRadius: 6, marginBottom: 8, backgroundColor: 'transparent' },
+  input: { borderWidth: 1, padding: 8, borderRadius: 6, marginBottom: 8 },
   clear: { position: 'absolute', right: 8, top: 8, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
 });

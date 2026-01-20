@@ -1,4 +1,5 @@
 import CompanySelector from '@/components/CompanySelector';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { useCompany } from '@/context/CompanyContext';
 import { getCompanyLedgers } from '@/lib/api';
@@ -8,37 +9,36 @@ import { View as DefaultView, FlatList, StyleSheet, TextInput } from 'react-nati
 
 export default function LedgersScreen() {
   const [query, setQuery] = useState('');
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<{ name: string }[]>([]);
   const { selected } = useCompany();
-  const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({}, 'tabIconDefault');
-  const cardBg = useThemeColor({}, 'card');
 
   useEffect(() => {
     if (!selected) return;
     getCompanyLedgers(selected).then((res: any) => {
       const rows = res && res.data ? res.data : [];
-      const mapped = rows.map((s: any) => ({
-        name: s.$Name || s.Name || '',
-        closingBalance: Number(s.$ClosingBalance ?? s.ClosingBalance ?? s.Balance ?? 0) || 0,
-        openingBalance: Number(s.$OpeningBalance ?? s.OpeningBalance ?? 0) || 0,
-        parent: s.$Parent || s.Parent || 'N/A',
-        primary: s.$_PrimaryGroup || s.PrimaryGroup || 'N/A',
-      }));
+      const mapped = rows.map((s: any) => ({ name: s.$Name || s.Name || '' }));
       setItems(mapped);
     }).catch(() => {});
   }, [selected]);
 
   const filtered = items.filter((i) => i.name.toLowerCase().includes(query.toLowerCase()));
 
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{
+      <Stack.Screen options={{ 
         title: 'Ledgers',
-        headerRight: () => <CompanySelector />,
+        headerRight: () => (
+          <>
+            <ThemeToggle />
+            <CompanySelector />
+          </>
+        ),
       }} />
       <TextInput
-        style={[styles.searchBar, { color: textColor, borderColor: borderColor, backgroundColor: cardBg }]}
+        style={[styles.searchBar, { color: textColor, borderColor: borderColor }]}
         placeholder="Search ledgers..."
         placeholderTextColor="#999"
         value={query}
@@ -48,38 +48,8 @@ export default function LedgersScreen() {
         data={filtered}
         keyExtractor={(item, index) => item.name + index}
         renderItem={({ item }) => (
-          <DefaultView style={[styles.card, { backgroundColor: cardBg, borderColor: borderColor }]}>
-            <DefaultView style={styles.cardHeader}>
-              <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.ledgerName, { color: textColor }]}>
-                {item.name}
-              </Text>
-              <Text style={[styles.closingBalance, { color: textColor }]}>
-                ₹{Math.abs(item.closingBalance || 0).toFixed(2)}
-              </Text>
-            </DefaultView>
-
-            <DefaultView style={styles.cardDetails}>
-              <DefaultView style={styles.detailRow}>
-                <Text style={[styles.label, { color: borderColor }]}>Primary:</Text>
-                <Text style={[styles.value, { color: textColor }]} numberOfLines={1}>
-                  {item.primary}
-                </Text>
-              </DefaultView>
-
-              <DefaultView style={styles.detailRow}>
-                <Text style={[styles.label, { color: borderColor }]}>Parent:</Text>
-                <Text style={[styles.value, { color: textColor }]} numberOfLines={1}>
-                  {item.parent}
-                </Text>
-              </DefaultView>
-
-              <DefaultView style={styles.detailRow}>
-                <Text style={[styles.label, { color: borderColor }]}>Opening Balance:</Text>
-                <Text style={[styles.value, { color: textColor }]}>
-                  ₹{Math.abs(item.openingBalance || 0).toFixed(2)}
-                </Text>
-              </DefaultView>
-            </DefaultView>
+          <DefaultView style={[styles.item, { borderBottomColor: borderColor }]}>
+            <Text style={styles.itemText}>{item.name}</Text>
           </DefaultView>
         )}
       />
@@ -88,60 +58,8 @@ export default function LedgersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingVertical: 8, paddingHorizontal: 12 },
-  searchBar: {
-    margin: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  card: {
-    margin: 12,
-    marginVertical: 8,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  ledgerName: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 8,
-  },
-  closingBalance: {
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  cardDetails: {
-    gap: 8,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-    flex: 0.4,
-  },
-  value: {
-    fontSize: 13,
-    flex: 0.6,
-    textAlign: 'right',
-  },
+  container: { flex: 1 },
+  searchBar: { margin: 16, padding: 12, borderWidth: 1, borderRadius: 8 },
+  item: { padding: 16, borderBottomWidth: 1 },
+  itemText: { fontSize: 16 },
 });
