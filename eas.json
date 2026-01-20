@@ -9,10 +9,23 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "artifactType": "apk"
+      },
+      "env": {
+        "BASE_URL": "$BASE_URL",
+        "ADMIN_PIN": "$ADMIN_PIN",
+        "EXPO_PUBLIC_GEOAPIFY_API_KEY": "$EXPO_PUBLIC_GEOAPIFY_API_KEY"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "BASE_URL": "$BASE_URL",
+        "ADMIN_PIN": "$ADMIN_PIN",
+        "EXPO_PUBLIC_GEOAPIFY_API_KEY": "$EXPO_PUBLIC_GEOAPIFY_API_KEY"
+      }
     }
   },
   "submit": {

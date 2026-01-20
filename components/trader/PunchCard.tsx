@@ -38,33 +38,39 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
   const cardBg = useThemeColor({}, "card");
   const borderColor = useThemeColor({}, "tabIconDefault");
   const buttonPrimary = useThemeColor({}, "buttonPrimary");
+  const textColor = useThemeColor({}, "text");
   // const clearBg = useThemeColor({}, 'clearBg');
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
     (async () => {
-      const current = await Location.getForegroundPermissionsAsync();
-      if (current.status !== "granted") {
-        return null;
-      } else {
+      try {
+        const perm = await Location.requestForegroundPermissionsAsync();
+        if (perm.status !== "granted") {
+          return;
+        }
+        const servicesEnabled = await Location.hasServicesEnabledAsync();
+        if (!servicesEnabled) {
+          return;
+        }
         try {
           const loc = await Location.getCurrentPositionAsync({});
           setCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
         } catch {}
-      }
-      subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 30000,
-          distanceInterval: 1,
-        },
-        (loc) => {
-          setCoords({
-            lat: loc.coords.latitude,
-            lon: loc.coords.longitude,
-          });
-        },
-      );
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 30000,
+            distanceInterval: 1,
+          },
+          (loc) => {
+            setCoords({
+              lat: loc.coords.latitude,
+              lon: loc.coords.longitude,
+            });
+          },
+        );
+      } catch {}
     })();
     return () => {
       if (subscription) subscription.remove();
@@ -99,7 +105,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
 
   const locText = coords
     ? `lat: ${coords.lat.toFixed(6)} lon: ${coords.lon.toFixed(6)}`
-    : "-";
+    : "Location not available";
 
   const handlePress = async () => {
     if (submitting) return;
@@ -217,7 +223,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
           onChangeText={setAmount}
           style={[styles.input, { borderColor: borderColor }]}
         />
-        <Text style={styles.location}>{locText}</Text>
+        <Text style={[styles.location, { color: textColor }]}>{locText}</Text>
 
         <TouchableOpacity
           style={[

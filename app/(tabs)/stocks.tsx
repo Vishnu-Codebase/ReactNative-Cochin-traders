@@ -5,7 +5,7 @@ import { Text, TextInput, View, useThemeColor } from "@/components/Themed";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/context/CompanyContext";
-import { getStocksWithBatches } from "@/lib/api";
+import { getCompanyStocks, getStocksWithBatches } from "@/lib/api";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -45,10 +45,7 @@ export default function StocksScreen() {
 
     getStocksWithBatches(selected)
       .then((res: any) => {
-        // console.log("Stocks API Response:", res);
         const rows = res && res.data ? res.data : [];
-        // console.log("Rows:", rows);
-
         const mapped = rows.map((s: any) => ({
           id: String(s.$Name || s.StockName || Math.random()),
           name: s.$Name || s.StockName || "",
@@ -57,17 +54,41 @@ export default function StocksScreen() {
           parent: s.$Parent || s.Category || "N/A",
           price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
           batches: s.batches || [],
-          totalQuantity: s.totalQuantity || 0,
+          totalQuantity: s.totalQuantity ?? (Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0),
         }));
-        // console.log("Mapped items:", mapped);
         setItems(mapped);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Failed to fetch stocks:", err);
-        setError(err.message || "Failed to load stocks");
-        setItems([]);
-        setLoading(false);
+      .catch(async (err) => {
+        const msg = String(err?.message || err);
+        if (msg.includes("404")) {
+          try {
+            const res = await getCompanyStocks(selected);
+            const rows = res && res.data ? res.data : [];
+            const fallbackMapped = rows.map((s: any) => ({
+              id: String(s.$Name || s.StockName || Math.random()),
+              name: s.$Name || s.StockName || "",
+              closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
+              openingQty: Number(s.$OpeningBalance ?? s.OpeningQty ?? 0) || 0,
+              parent: s.$Parent || s.Category || "N/A",
+              price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
+              batches: [],
+              totalQuantity: Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0,
+            }));
+            setItems(fallbackMapped);
+            setError(null);
+          } catch (err) {
+            setError(String("Failed to load stocks: " + msg));
+            setItems([]);
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          console.error("Failed to fetch stocks:", err);
+          setError(msg || "Failed to load stocks");
+          setItems([]);
+          setLoading(false);
+        }
       });
   }, [selected]);
 
@@ -77,12 +98,12 @@ export default function StocksScreen() {
       getStocksWithBatches(selected)
         .then((res: any) => {
           const rows = res && res.data ? res.data : [];
-          const filtered = rows.filter((r: any) =>
+          const filteredRows = rows.filter((r: any) =>
             String(r.$Name || r.StockName || "")
               .toLowerCase()
               .includes(query.toLowerCase()),
           );
-          const mapped = filtered.map((s: any) => ({
+          const mapped = filteredRows.map((s: any) => ({
             id: String(s.$Name || s.StockName || Math.random()),
             name: s.$Name || s.StockName || "",
             closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
@@ -90,11 +111,39 @@ export default function StocksScreen() {
             parent: s.$Parent || s.Category || "N/A",
             price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
             batches: s.batches || [],
-            totalQuantity: s.totalQuantity || 0,
+            totalQuantity: s.totalQuantity ?? (Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0),
           }));
           setItems(mapped);
         })
-        .catch((err) => console.error("Search failed:", err));
+        .catch(async (err) => {
+          const msg = String(err?.message || err);
+          if (msg.includes("404")) {
+            try {
+              const res = await getCompanyStocks(selected);
+              const rows = res && res.data ? res.data : [];
+              const filteredRows = rows.filter((r: any) =>
+                String(r.$Name || r.StockName || "")
+                  .toLowerCase()
+                  .includes(query.toLowerCase()),
+              );
+              const fallbackMapped = filteredRows.map((s: any) => ({
+                id: String(s.$Name || s.StockName || Math.random()),
+                name: s.$Name || s.StockName || "",
+                closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
+                openingQty: Number(s.$OpeningBalance ?? s.OpeningQty ?? 0) || 0,
+                parent: s.$Parent || s.Category || "N/A",
+                price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
+                batches: [],
+                totalQuantity: Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0,
+              }));
+              setItems(fallbackMapped);
+            } catch (inner) {
+              console.error("Fallback search failed:", inner);
+            }
+          } else {
+            console.error("Search failed:", err);
+          }
+        });
     }, 300);
     return () => clearTimeout(t);
   }, [query, selected]);

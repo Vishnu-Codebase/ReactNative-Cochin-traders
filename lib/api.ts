@@ -10,6 +10,10 @@ async function getJson(path: string) {
 
     const res = await fetch(`${baseUrl}${path}`, {
       signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     clearTimeout(timeoutId);
 

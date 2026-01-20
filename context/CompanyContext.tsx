@@ -17,6 +17,7 @@ const CompanyContext = createContext<CompanyContextType | null>(null);
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [shown404, setShown404] = useState(false);
   const STORAGE_KEY = 'cochin_companies_v1';
 
   async function loadFromStorage() {
@@ -81,8 +82,18 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       console.error('CompanyContext - refresh error:', e);
       const msg = String((e as any)?.message || e);
       if (msg.includes('API error: 404')) {
-        Alert.alert('Error', 'Company names not found (404). Closing app.');
-        if (Platform.OS !== 'web') BackHandler.exitApp();
+        if (!shown404) {
+          setShown404(true);
+          Alert.alert(
+            'Company Not Found',
+            'Company names API returned 404.',
+            [
+              { text: 'Retry', onPress: () => { setShown404(false); refresh(); } },
+              { text: 'Exit', style: 'destructive', onPress: () => { if (Platform.OS !== 'web') BackHandler.exitApp(); } },
+            ],
+            { cancelable: false }
+          );
+        }
       }
     }
   }
