@@ -5,7 +5,6 @@ import ShopInput from "@/components/trader/ShopInput";
 import ShopSuggestions from "@/components/trader/ShopSuggestions";
 import { useCompany } from "@/context/CompanyContext";
 import { getCompanyParties, submitPunchIn } from "@/lib/api";
-import { getUserAddress } from "@/lib/getLocationAccess";
 import * as Location from "expo-location";
 import React, { memo, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from "react-native";
@@ -24,7 +23,7 @@ export default memo(function PunchCard({
   const [amount, setAmount] = useState("");
   const [parties, setParties] = useState<{ name: string; closingBalance: number }[]>([]);
   const [showParties, setShowParties] = useState(false);
-  const [locationName, setLocationName] = useState<string | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -32,7 +31,6 @@ export default memo(function PunchCard({
   const cardBg = useThemeColor({}, "card");
   const borderColor = useThemeColor({}, "tabIconDefault");
   const buttonPrimary = useThemeColor({}, "buttonPrimary");
-  const GEOAPIFY_API_KEY = (process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY as string) || "";
   // const clearBg = useThemeColor({}, 'clearBg');
 
   // Fetch parties
@@ -62,31 +60,42 @@ export default memo(function PunchCard({
   }, [companyName]);
 
 
-  // Fetch location address via Geoapify
+  // Fetch coordinates using Expo Location only
   useEffect(() => {
     let isMounted = true;
     setLocationLoading(true);
-    console.log("📍 Using Geoapify key?", Boolean(GEOAPIFY_API_KEY));
-    getUserAddress(GEOAPIFY_API_KEY)
-      .then((addr) => {
-        if (!isMounted) return;
-        console.log("📍 Geoapify address:", addr);
-        setLocationName(addr || null);
-        setLocationLoading(false);
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        console.warn("❌ Geoapify address fetch failed");
-        setLocationName(null);
-        setLocationLoading(false);
-      });
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          if (isMounted) {
+            setCoords(null);
+            setLocationLoading(false);
+          }
+          return;
+        }
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (isMounted) {
+          setCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
+          setLocationLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setCoords(null);
+          setLocationLoading(false);
+        }
+      }
+    })();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const locText = locationLoading ? "Loading location..." : (locationName || "Location unavailable");
+  const locText =
+    locationLoading
+      ? "Loading location..."
+      : (coords ? `Lat: ${coords.lat.toFixed(5)} & Lon: ${coords.lon.toFixed(5)}` : "Location unavailable");
 
   const handlePress = async () => {
     if (submitting) return;
@@ -117,10 +126,10 @@ export default memo(function PunchCard({
       return;
     }
 
-    if (!locationName || locationLoading) {
+    if (!coords || locationLoading) {
       Alert.alert(
         "Missing Location",
-        "Address not available. Please wait for location or enable GPS."
+        "Location not available. Please wait for GPS."
       );
       return;
     }
@@ -132,7 +141,7 @@ export default memo(function PunchCard({
       companyName: companyName || "",
       shopName,
       amount: amt,
-      location: locationName || "",
+      location: `Lat: ${coords.lat.toFixed(5)} & Lon: ${coords.lon.toFixed(5)}`,
       time: now.toLocaleTimeString(),
       date: now.toLocaleDateString(),
     };
@@ -142,7 +151,7 @@ export default memo(function PunchCard({
       console.log("📤 Submitting punch in:", payload);
       await submitPunchIn(payload);
       console.log("✅ Punch in successful");
-      setSuccessInfo({ shopName, amount: amt, location: locationName || "", time: payload.time });
+      setSuccessInfo({ shopName, amount: amt, location: payload.location, time: payload.time });
       setShowSuccess(true);
       setShopName("");
       setAmount("");
