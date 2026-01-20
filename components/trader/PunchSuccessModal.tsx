@@ -7,13 +7,13 @@ type Props = {
   title?: string;
   shopName?: string;
   amount?: number;
-  location?: string;
+  // location?: string;
   employeeName?: string;
   time?: string;
   onClose?: () => void;
 };
 
-export default function PunchSuccessModal({ visible, title, shopName, amount, location, employeeName, time, onClose }: Props) {
+export default function PunchSuccessModal({ visible, title, shopName, amount, employeeName, time, onClose }: Props) {
   const cardBg = useThemeColor({}, 'card');
   const buttonPrimary = useThemeColor({}, 'buttonPrimary');
   const textColor = useThemeColor({}, 'text');
@@ -28,7 +28,7 @@ export default function PunchSuccessModal({ visible, title, shopName, amount, lo
           {time ? <Text style={[styles.detail, { color: textColor }]}>Time: {time}</Text> : null}
           {shopName ? <Text style={[styles.detail, { color: textColor }]}>Shop: {shopName}</Text> : null}
           {typeof amount === 'number' ? <Text style={[styles.detail, { color: textColor }]}>Amount: ₹{amount.toFixed(2)}</Text> : null}
-          {location ? <Text style={[styles.detail, { color: textColor }]}>Location: {location}</Text> : null}
+          {/* {location ? <Text style={[styles.detail, { color: textColor }]}>Location: {location}</Text> : null} */}
           <TouchableOpacity style={[styles.button, { backgroundColor: buttonPrimary }]} onPress={onClose}>
             <Text style={styles.buttonText}>OK</Text>
           </TouchableOpacity>

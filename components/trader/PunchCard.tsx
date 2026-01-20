@@ -6,7 +6,6 @@ import ShopInput from "@/components/trader/ShopInput";
 import ShopSuggestions from "@/components/trader/ShopSuggestions";
 import { useCompany } from "@/context/CompanyContext";
 import { getCompanyParties, submitPunchIn } from "@/lib/api";
-import * as Location from "expo-location";
 import React, { memo, useEffect, useState } from "react";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -23,7 +22,6 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
     { name: string; closingBalance: number }[]
   >([]);
   const [showParties, setShowParties] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{
@@ -32,50 +30,11 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
     location?: string;
     time?: string;
   } | null>(null);
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
-    null,
-  );
   const cardBg = useThemeColor({}, "card");
   const borderColor = useThemeColor({}, "tabIconDefault");
   const buttonPrimary = useThemeColor({}, "buttonPrimary");
   const textColor = useThemeColor({}, "text");
   // const clearBg = useThemeColor({}, 'clearBg');
-
-  useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
-    (async () => {
-      try {
-        const perm = await Location.requestForegroundPermissionsAsync();
-        if (perm.status !== "granted") {
-          return;
-        }
-        const servicesEnabled = await Location.hasServicesEnabledAsync();
-        if (!servicesEnabled) {
-          return;
-        }
-        try {
-          const loc = await Location.getCurrentPositionAsync({});
-          setCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
-        } catch {}
-        subscription = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            timeInterval: 30000,
-            distanceInterval: 1,
-          },
-          (loc) => {
-            setCoords({
-              lat: loc.coords.latitude,
-              lon: loc.coords.longitude,
-            });
-          },
-        );
-      } catch {}
-    })();
-    return () => {
-      if (subscription) subscription.remove();
-    };
-  }, []);
 
   // Fetch parties
   useEffect(() => {
@@ -102,10 +61,6 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
         setParties([]);
       });
   }, [companyName]);
-
-  const locText = coords
-    ? `lat: ${coords.lat.toFixed(6)} lon: ${coords.lon.toFixed(6)}`
-    : "Location not available";
 
   const handlePress = async () => {
     if (submitting) return;
@@ -136,9 +91,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
       companyName: companyName || "",
       shopName,
       amount: amt,
-      location: coords
-        ? { lat: coords.lat, lng: coords.lon }
-        : { lat: 0, lng: 0 },
+      location: "_",
       time: now.toLocaleTimeString(),
       date: now.toLocaleDateString(),
     };
@@ -151,7 +104,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
       setSuccessInfo({
         shopName,
         amount: amt,
-        location: locText,
+        location: "_",
         time: payload.time,
       });
       setShowSuccess(true);
@@ -223,7 +176,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
           onChangeText={setAmount}
           style={[styles.input, { borderColor: borderColor }]}
         />
-        <Text style={[styles.location, { color: textColor }]}>{locText}</Text>
+        {/* <Text style={[styles.location, { color: textColor }]}>{locText}</Text> */}
 
         <TouchableOpacity
           style={[
@@ -245,7 +198,6 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
         visible={showSuccess}
         shopName={successInfo?.shopName}
         amount={successInfo?.amount}
-        location={successInfo?.location}
         onClose={() => setShowSuccess(false)}
         employeeName={employeeName || ""}
         time={successInfo?.time || ""}

@@ -133,7 +133,7 @@ export async function submitPunchIn(payload: {
   companyName: string;
   shopName: string;
   amount: number;
-  location: { lat: number; lng: number };
+  location: string;
   time: string;
   date: string;
 }) {
