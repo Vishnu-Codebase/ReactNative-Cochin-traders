@@ -6,8 +6,8 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import CompanySelector from "../../components/CompanySelector";
-
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof Icon>["name"];
   color: string;
@@ -19,78 +19,80 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#fff",
-        tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
-        tabBarShowLabel: true,
-        tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].navBar,
-          paddingBottom: 8,
-          paddingTop: 8,
-          // marginBottom: 12,
-        },
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: true,
-        headerRight: () => <CompanySelector />,
-        headerStyle: { backgroundColor: Colors[colorScheme ?? "light"].navBar },
-        headerTintColor: "#fff",
-      }}
-    >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: "Dashboard",
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          headerRight: () => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <ThemeToggle />
-              <Link href="/modal" asChild>
-                <Pressable>
-                  {({ pressed }) => (
-                    <Icon
-                      name="info"
-                      size={25}
-                      color="#fff"
-                      style={{ marginRight: 8, opacity: pressed ? 0.5 : 1 }}
-                    />
-                  )}
-                </Pressable>
-              </Link>
-              <CompanySelector />
-            </View>
-          ),
+    <SafeAreaProvider>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: "#fff",
+          tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
+          tabBarShowLabel: true,
+          tabBarStyle: {
+            backgroundColor: Colors[colorScheme ?? "light"].navBar,
+            paddingBottom: 8,
+            paddingTop: 8,
+            // marginBottom: 12,
+          },
+          // Disable the static render of the header on web
+          // to prevent a hydration error in React Navigation v6.
+          headerShown: true,
+          headerRight: () => <CompanySelector />,
+          headerStyle: { backgroundColor: Colors[colorScheme ?? "light"].navBar },
+          headerTintColor: "#fff",
         }}
-      />
-      <Tabs.Screen
-        name="outstanding"
-        options={{
-          title: "Outstanding",
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
-          headerRight: () => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <ThemeToggle />
-              <CompanySelector />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="stocks"
-        options={{
-          title: "Stocks",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="archive" color={color} />
-          ),
-          headerRight: () => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <ThemeToggle />
-              <CompanySelector />
-            </View>
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            title: "Dashboard",
+            tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+            headerRight: () => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <ThemeToggle />
+                <Link href="/modal" asChild>
+                  <Pressable>
+                    {({ pressed }) => (
+                      <Icon
+                        name="info"
+                        size={25}
+                        color="#fff"
+                        style={{ marginRight: 8, opacity: pressed ? 0.5 : 1 }}
+                      />
+                    )}
+                  </Pressable>
+                </Link>
+                <CompanySelector />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="outstanding"
+          options={{
+            title: "Outstanding",
+            tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+            headerRight: () => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <ThemeToggle />
+                <CompanySelector />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="stocks"
+          options={{
+            title: "Stocks",
+            tabBarIcon: ({ color }) => (
+              <TabBarIcon name="archive" color={color} />
+            ),
+            headerRight: () => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <ThemeToggle />
+                <CompanySelector />
+              </View>
+            ),
+          }}
+        />
+      </Tabs>
+    </SafeAreaProvider>
   );
 }

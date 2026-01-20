@@ -9,7 +9,7 @@ export default function ThemeToggle() {
   return (
     <Pressable onPress={toggleTheme} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}>
       <Icon 
-        name={theme === 'light' ? 'dark-mode' : 'light-mode'} 
+        name={theme === 'light' ? 'brightness-4' : 'brightness-7'} 
         size={24} 
         color="#fff"
       />

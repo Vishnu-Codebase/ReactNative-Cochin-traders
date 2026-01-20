@@ -98,7 +98,7 @@ export default function AnimatedSplash() {
         style={[styles.content, { opacity, transform: [{ scale }] }]}
       >
         <Animated.Image
-          source={require("@/assets/images/splash-icon.png")}
+          source={require("../assets/images/splash-icon.png")}
           style={[styles.logo, { transform: [{ translateY: iconBounce }] }]}
           resizeMode="contain"
         />
@@ -106,7 +106,7 @@ export default function AnimatedSplash() {
           style={[
             styles.companyName,
             {
-              color: colors.text,
+              color: "#cbcbcbff",
               fontStyle: "italic",
               opacity: nameOpacity,
               transform: [{ scale: nameScale }],
@@ -132,11 +132,12 @@ const styles = StyleSheet.create({
     height: 80,
     marginBottom: 16,
     backgroundColor: "transparent",
+    borderRadius: '50%',
   },
   companyName: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
     marginTop: 12,
-    color: "#e0e0e0ff",
+    color: "#cbcbcbff"
   },
 });

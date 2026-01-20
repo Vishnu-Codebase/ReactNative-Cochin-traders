@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
 
+import { SkeletonCountCard } from '@/components/Skeleton';
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { useCompany } from '@/context/CompanyContext';
 import { getCompanyLedgers, getCompanyParties, getCompanyStocks } from '@/lib/api';
@@ -17,6 +18,7 @@ export default function ModalScreen() {
     ledgers: 0,
     parties: 0,
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!selected) {
@@ -26,6 +28,7 @@ export default function ModalScreen() {
 
     const fetchCounts = async () => {
       try {
+        setLoading(true);
         const [stocksRes, ledgersRes, partiesRes] = await Promise.all([
           getCompanyStocks(selected).catch(() => ({ data: [] })),
           getCompanyLedgers(selected).catch(() => ({ data: [] })),
@@ -39,6 +42,8 @@ export default function ModalScreen() {
         });
       } catch (e) {
         console.error(e);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -63,17 +68,25 @@ export default function ModalScreen() {
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
       
       <View style={styles.grid}>
-        {cards.map((card, index) => (
-          <TouchableOpacity 
-            key={index} 
-            style={[styles.card, { backgroundColor: cardBg }]} 
-            onPress={() => card.route && router.push(card.route as any)}
-            disabled={!card.route}
-          >
-            <Text style={styles.cardCount}>{card.count}</Text>
-            <Text style={[styles.cardTitle, { color: cardTitleColor }]}>{card.title}</Text>
-          </TouchableOpacity>
-        ))}
+        {loading ? (
+          <>
+            <SkeletonCountCard />
+            <SkeletonCountCard />
+            <SkeletonCountCard />
+          </>
+        ) : (
+          cards.map((card, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={[styles.card, { backgroundColor: cardBg }]} 
+              onPress={() => card.route && router.push(card.route as any)}
+              disabled={!card.route}
+            >
+              <Text style={styles.cardCount}>{card.count}</Text>
+              <Text style={[styles.cardTitle, { color: cardTitleColor }]}>{card.title}</Text>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
       <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />

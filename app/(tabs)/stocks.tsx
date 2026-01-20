@@ -1,19 +1,18 @@
 import CompanySelector from "@/components/CompanySelector";
+import { SkeletonCardItem } from "@/components/Skeleton";
+import BatchCartModal from "@/components/stocks/BatchCartModal";
 import { Text, TextInput, View, useThemeColor } from "@/components/Themed";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/context/CompanyContext";
 import { getStocksWithBatches } from "@/lib/api";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   View as DefaultView,
   FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
   StyleSheet,
-  TouchableOpacity,
+  TouchableOpacity
 } from "react-native";
 
 export default function StocksScreen() {
@@ -31,8 +30,6 @@ export default function StocksScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalItem, setModalItem] = useState<any | null>(null);
-  const [quantities, setQuantities] = useState<Record<number, string>>({});
-  const [batchData, setBatchData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!selected) {
@@ -114,7 +111,12 @@ export default function StocksScreen() {
       <Stack.Screen
         options={{
           title: "Stocks",
-          headerRight: () => <CompanySelector />,
+          headerRight: () => (
+            <DefaultView style={{ flexDirection: "row", alignItems: "center" }}>
+              <ThemeToggle />
+              <CompanySelector />
+            </DefaultView>
+          ),
         }}
       />
 
@@ -150,11 +152,9 @@ export default function StocksScreen() {
       />
 
       {loading ? (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={{ color: textColor }}>Loading stocks...</Text>
-        </View>
+        <DefaultView style={{ paddingHorizontal: 12 }}>
+          {[...Array(6)].map((_, i) => <SkeletonCardItem key={i} />)}
+        </DefaultView>
       ) : filtered.length === 0 ? (
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
@@ -268,29 +268,17 @@ export default function StocksScreen() {
                   </DefaultView>
                 )}
               </DefaultView>
-
+              {item.totalQuantity > 0 ? (
               <TouchableOpacity
                 style={[styles.addButton, { marginTop: 12, backgroundColor: buttonPrimary }]}
                 onPress={() => {
                   setModalItem(item);
-                  setQuantities({});
-
-                  // Use batches already loaded from the stock data
-                  const batches = item.batches || [];
-                  setBatchData(batches);
-
-                  // Pre-fill the quantities from batch data
-                  const initialQty: Record<number, string> = {};
-                  batches.forEach((batch: any) => {
-                    initialQty[batch.size] = batch.quantity.toString();
-                  });
-                  setQuantities(initialQty);
-
                   setModalVisible(true);
                 }}
               >
                 <Text style={styles.addButtonText}>Add to Cart</Text>
               </TouchableOpacity>
+              ): null}
             </DefaultView>
           )}
         />
@@ -302,151 +290,20 @@ export default function StocksScreen() {
         <Text style={styles.cartButtonText}>Open Cart</Text>
       </TouchableOpacity>
 
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>
-                {modalItem?.name}
-              </Text>
-              <Text style={{ marginBottom: 12, color: textColor }}>
-                Available: {modalItem?.totalQuantity ?? 0}
-              </Text>
-
-              {/* Batch Input Boxes - Only from Database */}
-              <DefaultView style={styles.sizesGrid}>
-                {batchData.length > 0 ? (
-                  batchData.map((batch: any) => {
-                    const batchQty = batch.quantity || 0;
-                    const inputValue = Number(quantities[batch.size]) || 0;
-
-                    return (
-                      <DefaultView key={batch.size} style={styles.sizeInputBox}>
-                        <Text
-                          style={[styles.sizeLabel, { color: borderColor }]}
-                        >
-                          Size {batch.size}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.sizeLabel,
-                            { color: "#999", fontSize: 12 },
-                          ]}
-                        >
-                          Available: {batchQty}
-                        </Text>
-                        {batchQty === 0 ? null : (
-                          <TextInput
-                            keyboardType="numeric"
-                            placeholder={batchQty.toString()}
-                            value={quantities[batch.size]?.toString() || ""}
-                            onChangeText={(value) => {
-                              const cleanValue = value.replace(/[^0-9]/g, "");
-                              const numValue = Number(cleanValue) || 0;
-
-                              if (cleanValue === "") {
-                                // Allow clearing the value
-                                setQuantities((prev) => ({
-                                  ...prev,
-                                  [batch.size]: "",
-                                }));
-                              } else if (numValue <= batchQty) {
-                                // Allow only values <= batch quantity
-                                setQuantities((prev) => ({
-                                  ...prev,
-                                  [batch.size]: cleanValue,
-                                }));
-                              } else {
-                                // Show error if value exceeds batch quantity
-                                Alert.alert(
-                                  "Invalid Quantity",
-                                  `Value cannot exceed available quantity (${batchQty})`,
-                                  [{ text: "OK" }],
-                                );
-                                // Clear the invalid input
-                                setQuantities((prev) => ({
-                                  ...prev,
-                                  [batch.size]: "",
-                                }));
-                              }
-                            }}
-                            style={[
-                              styles.sizeInput,
-                              {
-                                borderColor,
-                                color: textColor,
-                                minWidth: 60,
-                                flex: 1,
-                              },
-                            ]}
-                          />
-                        )}
-                      </DefaultView>
-                    );
-                  })
-                ) : (
-                  <Text
-                    style={{
-                      color: textColor,
-                      textAlign: "center",
-                      marginVertical: 16,
-                    }}
-                  >
-                    No batches available for this item
-                  </Text>
-                )}
-              </DefaultView>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "flex-end",
-                  marginTop: 16,
-                  backgroundColor: "transparent",
-                }}
-              >
-                <Pressable
-                  onPress={() => setModalVisible(false)}
-                  style={[styles.modalButton, { backgroundColor: buttonPrimary }]}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    if (!modalItem) return;
-                    const hasQuantity = Object.values(quantities).some(
-                      (v) => v && Number(v) > 0,
-                    );
-                    if (!hasQuantity) return;
-
-                    // Add to cart with pieces as object for each size (1-12)
-                    const piecesObj: Record<number, number> = {};
-                    Object.entries(quantities).forEach(([size, qty]) => {
-                      const num = Number(qty) || 0;
-                      if (num > 0) {
-                        piecesObj[Number(size)] = num;
-                      }
-                    });
-
-                    cart.add({
-                      id: `${modalItem.name}-${Date.now()}`,
-                      name: modalItem.name,
-                      pieces: piecesObj,
-                    });
-
-                    setModalVisible(false);
-                  }}
-                  style={[styles.modalButton, { marginLeft: 8, backgroundColor: buttonPrimary }]}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>
-                    OKAY
-                  </Text>
-                </Pressable>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <BatchCartModal
+        visible={modalVisible}
+        item={modalItem}
+        onClose={() => setModalVisible(false)}
+        onConfirm={(pieces) => {
+          if (!modalItem) return;
+          cart.add({
+            id: `${modalItem.name}-${Date.now()}`,
+            name: modalItem.name,
+            pieces,
+          });
+          setModalVisible(false);
+        }}
+      />
     </View>
   );
 }
@@ -529,53 +386,6 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   cartButtonText: { color: "#fff", fontWeight: "600" },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalContent: {
-    padding: 16,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    paddingBottom: 50,
-    maxHeight: "80%",
-  },
-  modalTitle: { fontSize: 16, fontWeight: "700", marginBottom: 6 },
-  modalInput: { borderWidth: 1, padding: 10, borderRadius: 8, marginBottom: 8 },
-  modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  sizesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-    marginBottom: 12,
-    gap: 12,
-  },
-  sizeInputBox: {
-    flex: 1,
-    minWidth: "45%",
-    alignItems: "center",
-    maxHeight: "50%",
-  },
-  sizeLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  sizeInput: {
-    borderWidth: 1,
-    padding: 8,
-    borderRadius: 6,
-    width: "100%",
-    minWidth: 60,
-    textAlign: "center",
-    fontSize: 12,
-  },
   batchItem: {
     fontSize: 12,
     paddingVertical: 2,

@@ -1,5 +1,7 @@
 import CompanySelector from '@/components/CompanySelector';
+import { SkeletonCardItem } from '@/components/Skeleton';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useCompany } from '@/context/CompanyContext';
 import { getCompanyParties } from '@/lib/api';
 import { Stack } from 'expo-router';
@@ -10,12 +12,14 @@ export default function OutstandingScreen() {
   const [receivables, setReceivables] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const { selected } = useCompany();
+  const [loading, setLoading] = useState(false);
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const cardBg = useThemeColor({}, 'card');
 
   useEffect(() => {
     if (!selected) return;
+    setLoading(true);
     getCompanyParties(selected)
       .then((res: any) => {
         const rows = res && res.data ? res.data : [];
@@ -38,7 +42,8 @@ export default function OutstandingScreen() {
           });
         setReceivables(debtors);
       })
-      .catch(() => setReceivables([]));
+      .catch(() => setReceivables([]))
+      .finally(() => setLoading(false));
   }, [selected]);
 
   const filtered = receivables.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()));
@@ -47,7 +52,12 @@ export default function OutstandingScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{
         title: 'Outstanding',
-        headerRight: () => <CompanySelector />,
+        headerRight: () => (
+          <DefaultView style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <ThemeToggle />
+            <CompanySelector />
+          </DefaultView>
+        ),
       }} />
       <TextInput
         style={[styles.searchBar, { color: textColor, borderColor: borderColor, backgroundColor: cardBg }]}
@@ -56,45 +66,51 @@ export default function OutstandingScreen() {
         value={query}
         onChangeText={setQuery}
       />
-      <FlatList
-        data={filtered}
-        keyExtractor={(item, index) => item.id + index}
-        renderItem={({ item }) => (
-          <DefaultView style={[styles.card, { backgroundColor: cardBg, borderColor: borderColor }]}>
-            <DefaultView style={styles.cardHeader}>
-              <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.debtorName, { color: textColor }]}>
-                {item.name}
-              </Text>
-              <Text style={[styles.outstandingAmount, { color: textColor }]}>
-                ₹{Math.abs(item.closingBalance || 0).toFixed(2)}
-              </Text>
+      {loading ? (
+        <DefaultView style={{ paddingHorizontal: 12 }}>
+          {[...Array(6)].map((_, i) => <SkeletonCardItem key={i} />)}
+        </DefaultView>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item, index) => item.id + index}
+          renderItem={({ item }) => (
+            <DefaultView style={[styles.card, { backgroundColor: cardBg, borderColor: borderColor }]}>
+              <DefaultView style={styles.cardHeader}>
+                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.debtorName, { color: textColor }]}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.outstandingAmount, { color: textColor }]}>
+                  ₹{Math.abs(item.closingBalance || 0).toFixed(2)}
+                </Text>
+              </DefaultView>
+
+              <DefaultView style={styles.cardDetails}>
+                <DefaultView style={styles.detailRow}>
+                  <Text style={[styles.label, { color: borderColor }]}>Address:</Text>
+                  <Text style={[styles.value, { color: textColor }]} numberOfLines={1}>
+                    {item.address}
+                  </Text>
+                </DefaultView>
+
+                <DefaultView style={styles.detailRow}>
+                  <Text style={[styles.label, { color: borderColor }]}>Parent:</Text>
+                  <Text style={[styles.value, { color: textColor }]} numberOfLines={1}>
+                    {item.parent}
+                  </Text>
+                </DefaultView>
+
+                <DefaultView style={styles.detailRow}>
+                  <Text style={[styles.label, { color: borderColor }]}>Opening Balance:</Text>
+                  <Text style={[styles.value, { color: textColor }]}>
+                    ₹{Math.abs(item.openingBalance || 0).toFixed(2)}
+                  </Text>
+                </DefaultView>
+              </DefaultView>
             </DefaultView>
-
-            <DefaultView style={styles.cardDetails}>
-              <DefaultView style={styles.detailRow}>
-                <Text style={[styles.label, { color: borderColor }]}>Address:</Text>
-                <Text style={[styles.value, { color: textColor }]} numberOfLines={1}>
-                  {item.address}
-                </Text>
-              </DefaultView>
-
-              <DefaultView style={styles.detailRow}>
-                <Text style={[styles.label, { color: borderColor }]}>Parent:</Text>
-                <Text style={[styles.value, { color: textColor }]} numberOfLines={1}>
-                  {item.parent}
-                </Text>
-              </DefaultView>
-
-              <DefaultView style={styles.detailRow}>
-                <Text style={[styles.label, { color: borderColor }]}>Opening Balance:</Text>
-                <Text style={[styles.value, { color: textColor }]}>
-                  ₹{Math.abs(item.openingBalance || 0).toFixed(2)}
-                </Text>
-              </DefaultView>
-            </DefaultView>
-          </DefaultView>
-        )}
-      />
+          )}
+        />
+      )}
     </View>
   );
 }

@@ -50,12 +50,12 @@ export default function DashboardScreen() {
 
       setEmployeeName(modalEmployeeName.trim());
       employeeNameRef.current = modalEmployeeName.trim();
+      // Immediately close the employee modal to avoid stuck-open cases
+      hideEmployeeModalSimple();
+      // Show success for a short duration
       setShowSuccessModal(true);
-
-      // Hide success modal and modal after 2 seconds
       setTimeout(() => {
         setShowSuccessModal(false);
-        hideEmployeeModalSimple();
         setModalEmployeeName("");
         setModalPhone("");
       }, 2000);

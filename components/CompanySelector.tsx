@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, TouchableOpacity, View as DefaultView } from 'react-native';
+import { View as DefaultView, Dimensions, FlatList, Modal, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
 import { useCompany } from '../context/CompanyContext';
 import { Text, View, useThemeColor } from './Themed';
 
 export default function CompanySelector() {
   const { companies, selected, setSelected, refresh } = useCompany();
   const [open, setOpen] = useState(false);
+  const SCREEN_WIDTH = Dimensions.get('window').width;
   
   const contentBg = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subColor = useThemeColor({ light: '#666', dark: '#aaa' }, 'text');
 
   return (
-    <>
-      <TouchableOpacity onPress={() => { refresh(); setOpen(true); }} style={styles.button}>
-        <Text numberOfLines={1} style={styles.text}>{selected || 'Select Company'}</Text>
+    <React.Fragment>
+      <TouchableOpacity onPress={() => { refresh(); setOpen(true); }} style={[styles.button, { maxWidth: SCREEN_WIDTH * 0.3 }]}>
+        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.text}>{selected || 'Select Company'}</Text>
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade">
         <DefaultView style={styles.modalBackdrop}>
@@ -39,12 +40,12 @@ export default function CompanySelector() {
           </View>
         </DefaultView>
       </Modal>
-    </>
+    </React.Fragment>
   );
 }
 
 const styles = StyleSheet.create({
-  button: { paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, minWidth: 120 },
+  button: { paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, minWidth: 120, overflow: 'hidden' },
   text: { color: '#fff', fontWeight: '600' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', maxHeight: '70%', padding: 12, borderRadius: 12 },

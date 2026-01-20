@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 
 import AnimatedSplash from "@/components/AnimatedSplash";
+import CompanySelector from "@/components/CompanySelector";
+import { View } from "@/components/Themed";
 import ThemeToggle from "@/components/ThemeToggle";
 import Colors from "@/constants/Colors";
 import { CartProvider } from "@/context/CartContext";
@@ -156,7 +158,12 @@ function StackContent({ showSplash }: { showSplash: boolean }) {
                 animation: "fade",
                 headerStyle: { backgroundColor: Colors[theme].navBar },
                 headerTintColor: "#fff",
-                headerRight: () => <ThemeToggle />,
+                headerRight: () => (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <ThemeToggle />
+                    <CompanySelector />
+                  </View>
+                ),
               }}
             >
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

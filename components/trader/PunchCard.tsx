@@ -1,4 +1,5 @@
 // components/trader/PunchCard.tsx
+import { SkeletonLine } from "@/components/Skeleton";
 import { Text, TextInput, View, useThemeColor } from "@/components/Themed";
 import PunchSuccessModal from "@/components/trader/PunchSuccessModal";
 import ShopInput from "@/components/trader/ShopInput";
@@ -7,7 +8,7 @@ import { useCompany } from "@/context/CompanyContext";
 import { getCompanyParties, submitPunchIn } from "@/lib/api";
 import * as Location from "expo-location";
 import React, { memo, useEffect, useState } from "react";
-import { Alert, BackHandler, StyleSheet, TouchableOpacity } from "react-native";
+import { Alert, StyleSheet, TouchableOpacity } from "react-native";
 
 type Props = {
   employeeName?: string | null;
@@ -44,20 +45,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
     (async () => {
       const current = await Location.getForegroundPermissionsAsync();
       if (current.status !== "granted") {
-        Alert.alert(
-          "Location Required",
-          "This app needs location access to work properly. The app will now close.",
-          [{ text: "OK", onPress: () => BackHandler.exitApp() }],
-        );
-        const requested = await Location.requestForegroundPermissionsAsync();
-        if (requested.status !== "granted") {
-          Alert.alert(
-            "Location Required",
-            "Permission not granted. The app will now close.",
-            [{ text: "OK", onPress: () => BackHandler.exitApp() }],
-          );
-          return;
-        }
+        return null;
       } else {
         try {
           const loc = await Location.getCurrentPositionAsync({});
@@ -67,7 +55,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
       subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 1000,
+          timeInterval: 30000,
           distanceInterval: 1,
         },
         (loc) => {
@@ -171,9 +159,20 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
     }
   };
   return (
-    <>
+    <React.Fragment>
       <View style={[styles.card, { backgroundColor: cardBg }]}>
         <Text style={styles.title}>Punch In</Text>
+
+        <View style={[styles.row, { backgroundColor: "transparent" }]}>
+          <Text style={styles.label}>Employee:</Text>
+          {employeeName ? (
+            <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">
+              {employeeName}
+            </Text>
+          ) : (
+            <SkeletonLine width="50%" height={16} style={{ alignSelf: "center" }} />
+          )}
+        </View>
 
         {companyName && (
           <View style={[styles.row, { backgroundColor: "transparent" }]}>
@@ -218,8 +217,6 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
           onChangeText={setAmount}
           style={[styles.input, { borderColor: borderColor }]}
         />
-
-        {/* Location removed */}
         <Text style={styles.location}>{locText}</Text>
 
         <TouchableOpacity
@@ -247,7 +244,7 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
         employeeName={employeeName || ""}
         time={successInfo?.time || ""}
       />
-    </>
+    </React.Fragment>
   );
 });
 
