@@ -98,7 +98,7 @@ export default function AnimatedSplash() {
         style={[styles.content, { opacity, transform: [{ scale }] }]}
       >
         <Animated.Image
-          source={require("@/assets/images/icon1024.png")}
+          source={require("@/assets/images/splash-icon.png")}
           style={[styles.logo, { transform: [{ translateY: iconBounce }] }]}
           resizeMode="contain"
         />
