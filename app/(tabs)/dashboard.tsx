@@ -1,4 +1,4 @@
-// app/(tabs)/index.tsx
+// app/(tabs)/dashboard.tsx
 import { Text, View } from "@/components/Themed";
 import EmployeeModal from "@/components/trader/EmployeeModal";
 import PunchCard from "@/components/trader/PunchCard";
@@ -98,8 +98,8 @@ export default function DashboardScreen() {
     })();
     return () => {
       isMounted = false;
-    };
-  }, [refresh]);
+      };
+  }, []);
 
   return (
     <View style={styles.container}>

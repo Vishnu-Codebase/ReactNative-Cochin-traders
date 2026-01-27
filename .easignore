@@ -1,0 +1,27 @@
+# .easignore
+node_modules/
+.expo/
+.expo-shared/
+web-build/
+dist/
+*.log
+.DS_Store
+.vscode/
+.idea/
+.cache/
+metro-cache/
+.env*.local
+.env
+*.tsbuildinfo
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+coverage/
+.nyc_output/
+Thumbs.db
+*.orig.*
+ngrok.yml
+expo-env.d.ts
+.kotlin/
+*.pem

@@ -11,10 +11,13 @@ const CartCtx = createContext<{
   add: (item: Item) => void;
   remove: (id: string) => void;
   clear: () => void;
+  ordered: boolean;
+  setOrdered: (v: boolean) => void;
 } | null>(null);
 
 export function CartProvider({ children }: { children: any }) {
   const [items, setItems] = useState<Item[]>([]);
+  const [ordered, setOrdered] = useState<boolean>(false);
   const value = useMemo(
     () => ({
       items,
@@ -38,8 +41,10 @@ export function CartProvider({ children }: { children: any }) {
       remove: (id: string) =>
         setItems((prev) => prev.filter((p) => p.id !== id)),
       clear: () => setItems([]),
+      ordered,
+      setOrdered,
     }),
-    [items],
+    [items, ordered],
   );
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }

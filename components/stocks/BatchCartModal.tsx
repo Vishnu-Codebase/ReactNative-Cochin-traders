@@ -46,7 +46,7 @@ export default function BatchCartModal({
     }
     const initial: Record<number, string> = {};
     item.batches.forEach((b) => {
-      initial[b.size] = "";
+      initial[b.size] = "0";
     });
     setQuantities(initial);
   }, [visible, item]);
@@ -148,7 +148,7 @@ export default function BatchCartModal({
             <View
               style={{
                 flexDirection: "row",
-                justifyContent: "flex-end",
+                justifyContent: "center",
                 marginTop: 16,
                 backgroundColor: "transparent",
               }}

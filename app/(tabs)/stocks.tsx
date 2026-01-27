@@ -6,7 +6,7 @@ import { Text, TextInput, View, useThemeColor } from "@/components/Themed";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/context/CompanyContext";
-import { getCompanyStocks, getStocksWithBatches } from "@/lib/api";
+import { getStocksWithBatches } from "@/lib/api";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -22,7 +22,7 @@ export default function StocksScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<number | null>(null);
-  const { selected } = useCompany();
+  const { selectedCompany } = useCompany();
   const router = useRouter();
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "tabIconDefault");
@@ -34,7 +34,7 @@ export default function StocksScreen() {
   const [modalItem, setModalItem] = useState<any | null>(null);
 
   const fetchStocksMain = async () => {
-    if (!selected) {
+    if (!selectedCompany) {
       setError("No company selected");
       setItems([]);
       return;
@@ -42,17 +42,17 @@ export default function StocksScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getStocksWithBatches(selected);
+      const res = await getStocksWithBatches(selectedCompany);
       const rows = res && res.data ? res.data : [];
       const mapped = rows.map((s: any) => ({
-        id: String(s.$Name || s.StockName || Math.random()),
-        name: s.$Name || s.StockName || "",
-        closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
-        openingQty: Number(s.$OpeningBalance ?? s.OpeningQty ?? 0) || 0,
-        parent: s.$Parent || s.Category || "N/A",
+        id: String(s.$Name || s.Name || s.StockName || Math.random()),
+        name: s.$Name || s.Name || s.StockName || "",
+        closingBalance: Number(s.closingBalance ?? s.$ClosingBalance ?? s.ClosingBalance ?? 0) || 0,
+        openingQty: Number(s.$OpeningBalance ?? s.OpeningBalance ?? 0) || 0,
+        parent: s.$Parent || s.Parent || s.Category || "N/A",
         price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
         batches: s.batches || [],
-        totalQuantity: s.totalQuantity ?? (Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0),
+        totalQuantity: Number(s.totalQuantity ?? 0),
       }));
       setItems(mapped);
       setLoading(false);
@@ -60,44 +60,22 @@ export default function StocksScreen() {
       const msg = String((err as any)?.message || err);
       const code = typeof (err as any)?.status === "number" ? (err as any).status : (msg.match(/(\d{3})/) ? Number(msg.match(/(\d{3})/)![1]) : null);
       if (code) setErrorCode(code);
-      if (msg.includes("404")) {
-        try {
-          const res = await getCompanyStocks(selected);
-          const rows = res && res.data ? res.data : [];
-          const fallbackMapped = rows.map((s: any) => ({
-            id: String(s.$Name || s.StockName || Math.random()),
-            name: s.$Name || s.StockName || "",
-            closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
-            openingQty: Number(s.$OpeningBalance ?? s.OpeningQty ?? 0) || 0,
-            parent: s.$Parent || s.Category || "N/A",
-            price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
-            batches: [],
-            totalQuantity: Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0,
-          }));
-          setItems(fallbackMapped);
-          setError(null);
-        } catch {
-          setError(String("Failed to load stocks: " + msg));
-          setItems([]);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setError(msg || "Failed to load stocks");
-        setItems([]);
-        setLoading(false);
-      }
     }
   };
 
   useEffect(() => {
     fetchStocksMain();
-  }, [selected]);
+    if (cart?.ordered) {
+      cart.setOrdered(false);
+    }
+  }, [selectedCompany, cart?.ordered]);
+
+  // Removed AppState listener to reduce unnecessary network calls
 
   useEffect(() => {
     const t = setTimeout(() => {
-      if (!selected) return;
-      getStocksWithBatches(selected)
+      if (!selectedCompany) return;
+      getStocksWithBatches(selectedCompany)
         .then((res: any) => {
           const rows = res && res.data ? res.data : [];
           const filteredRows = rows.filter((r: any) =>
@@ -106,49 +84,23 @@ export default function StocksScreen() {
               .includes(query.toLowerCase()),
           );
           const mapped = filteredRows.map((s: any) => ({
-            id: String(s.$Name || s.StockName || Math.random()),
-            name: s.$Name || s.StockName || "",
-            closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
-            openingQty: Number(s.$OpeningBalance ?? s.OpeningQty ?? 0) || 0,
-            parent: s.$Parent || s.Category || "N/A",
+            id: String(s.$Name || s.Name || s.StockName || Math.random()),
+            name: s.$Name || s.Name || s.StockName || "",
+            closingBalance: Number(s.closingBalance ?? s.$ClosingBalance ?? s.ClosingBalance ?? 0) || 0,
+            openingQty: Number(s.$OpeningBalance ?? s.OpeningBalance ?? 0) || 0,
+            parent: s.$Parent || s.Parent || s.Category || "N/A",
             price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
             batches: s.batches || [],
-            totalQuantity: s.totalQuantity ?? (Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0),
+            totalQuantity: Number(s.totalQuantity ?? 0),
           }));
           setItems(mapped);
         })
         .catch(async (err) => {
-          const msg = String(err?.message || err);
-          if (msg.includes("404")) {
-            try {
-              const res = await getCompanyStocks(selected);
-              const rows = res && res.data ? res.data : [];
-              const filteredRows = rows.filter((r: any) =>
-                String(r.$Name || r.StockName || "")
-                  .toLowerCase()
-                  .includes(query.toLowerCase()),
-              );
-              const fallbackMapped = filteredRows.map((s: any) => ({
-                id: String(s.$Name || s.StockName || Math.random()),
-                name: s.$Name || s.StockName || "",
-                closingQty: Number(s.$ClosingBalance ?? s.ClosingQty ?? 0) || 0,
-                openingQty: Number(s.$OpeningBalance ?? s.OpeningQty ?? 0) || 0,
-                parent: s.$Parent || s.Category || "N/A",
-                price: Number(s.$ClosingRate ?? s.ClosingRate ?? 0) || 0,
-                batches: [],
-                totalQuantity: Number(s.ClosingQty ?? s.$ClosingBalance ?? 0) || 0,
-              }));
-              setItems(fallbackMapped);
-            } catch (inner) {
-              console.error("Fallback search failed:", inner);
-            }
-          } else {
-            console.error("Search failed:", err);
-          }
+          console.log("Search failed:", err.message || err);
         });
     }, 300);
     return () => clearTimeout(t);
-  }, [query, selected]);
+  }, [query, selectedCompany]);
 
   const filtered = items.filter((i) =>
     i.name.toLowerCase().includes(query.toLowerCase()),
@@ -178,7 +130,7 @@ export default function StocksScreen() {
         </View>
       )}
 
-      {!selected && (
+      {!selectedCompany && (
         <View
           style={{ backgroundColor: "#ffeaa7", padding: 12, marginBottom: 8 }}
         >
@@ -285,10 +237,10 @@ export default function StocksScreen() {
                 </DefaultView>
                 <DefaultView style={styles.detailRow}>
                   <Text style={[styles.label, { color: borderColor }]}>
-                    Closing in Tally:
+                    Closing Balance:
                   </Text>
                   <Text style={[styles.value, { color: textColor }]}>
-                    ₹{item.closingQty.toFixed(2)}
+                    {item.closingBalance}
                   </Text>
                 </DefaultView>
                 {item.batches && item.batches.length > 0 && (
@@ -361,10 +313,10 @@ export default function StocksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingVertical: 8, paddingHorizontal: 12 },
+  container: { flex: 1, paddingVertical: 8},
   searchBar: {
-    margin: 16,
-    padding: 12,
+    margin: 6,
+    padding: 7,
     borderWidth: 1,
     borderRadius: 8,
     fontSize: 16,
@@ -389,7 +341,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   stockName: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: "600",
     flex: 1,
     marginRight: 8,

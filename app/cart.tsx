@@ -1,19 +1,14 @@
 import { Text, View } from "@/components/Themed";
 import { useCart } from "@/context/CartContext";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useEffect, useState } from "react";
-import {
-  Alert,
-  Animated,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-} from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Animated, FlatList, Pressable, StyleSheet, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+import ApiResponseMessage from "@/components/ApiResponseMessage";
 import ShopInput from "../components/trader/ShopInput";
 import { useCompany } from "../context/CompanyContext";
 import { getCompanyParties, submitOrder } from "../lib/api";
+import { useRouter } from "expo-router";
+import { useThemeColor } from "@/components/Themed";
 
 export default function CartScreen() {
   const cart = useCart();
@@ -22,7 +17,22 @@ export default function CartScreen() {
   const proceedScale = new Animated.Value(1);
   const [showParties, setShowParties] = useState(false);
   const [parties, setParties] = useState<{ name: string }[]>([]);
-  const { selected } = useCompany();
+  const { selectedCompany: selected } = useCompany();
+  const [respVisible, setRespVisible] = useState(false);
+  const [respSuccess, setRespSuccess] = useState(true);
+  const [respMessage, setRespMessage] = useState<string | undefined>(undefined);
+  const router = useRouter();
+  const buttonPrimary = useThemeColor({}, "buttonPrimary");
+
+  const hasDuplicate = useMemo(() => {
+    const names = cart.items.map((i) => i.name);
+    const seen = new Set<string>();
+    for (const n of names) {
+      if (seen.has(n)) return true;
+      seen.add(n);
+    }
+    return false;
+  }, [cart.items]);
 
   useEffect(() => {
     if (!selected) return;
@@ -54,18 +64,25 @@ export default function CartScreen() {
         items: cart.items,
       });
 
-      // Send all items in one request
-      const response = await submitOrder(selected, shopName, cart.items);
-      console.log("Order submitted successfully:", response);
+      // Map cart items to API order items
+      const orderItems = cart.items.map((i) => ({
+        stockItem: i.name,
+        pieces: i.pieces,
+      }));
 
-      Alert.alert("Success", "Order submitted successfully!");
+      // Send all items in one request
+      const response = await submitOrder(selected, shopName, orderItems);
+      console.log("Order submitted successfully:", response);
+      setRespSuccess(true);
+      setRespMessage(String(response?.message || "Order submitted successfully!"));
+      setRespVisible(true);
       cart.clear();
     } catch (e) {
       console.error("Order submission failed:", e);
-      Alert.alert(
-        "Error",
-        `Failed to submit order: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      const msg = e instanceof Error ? e.message : String(e);
+      setRespSuccess(false);
+      setRespMessage(msg);
+      setRespVisible(true);
     } finally {
       setSubmitting(false);
     }
@@ -73,6 +90,17 @@ export default function CartScreen() {
 
   return (
     <View style={styles.container}>
+      <ApiResponseMessage
+        visible={respVisible}
+        success={respSuccess}
+        title={respSuccess ? "✓ Order Submitted" : "Order Error"}
+        message={respMessage}
+        details={respSuccess ? { Shop: shopName, Items: cart.items.length } : undefined}
+        onClose={() => {
+          setRespVisible(false);
+          router.push("/(tabs)/stocks");
+        }}
+      />
       <View style={styles.inputWrap}>
         <ShopInput
           value={shopName}
@@ -134,8 +162,9 @@ export default function CartScreen() {
         )}
       />
       <TouchableWithoutFeedback
+        disabled={cart.items.length === 0}
         onPress={() => {
-          if (submitting) return;
+          if (submitting || hasDuplicate) return;
           Animated.sequence([
             Animated.timing(proceedScale, {
               toValue: 0.95,
@@ -155,12 +184,16 @@ export default function CartScreen() {
           style={[
             styles.proceedButton,
             {
-              opacity: submitting ? 0.5 : 1,
+              backgroundColor: buttonPrimary,
+              opacity:
+                submitting || hasDuplicate || cart.items.length === 0 ? 0.5 : 1,
               transform: [{ scale: proceedScale }],
             },
           ]}
         >
-          <Text style={styles.proceedButtonText}>Proceed</Text>
+          <Text style={styles.proceedButtonText}>
+            {hasDuplicate ? "Resolve duplicate items" : "Proceed"}
+          </Text>
         </Animated.View>
       </TouchableWithoutFeedback>
     </View>
@@ -198,7 +231,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   proceedButton: {
-    backgroundColor: "#2563eb",
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: "center",

@@ -9,6 +9,7 @@ import { getCompanyLedgers, getCompanyParties, getCompanyStocks } from '@/lib/ap
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 // LinearGradient
 
 export default function ModalScreen() {
@@ -22,34 +23,38 @@ export default function ModalScreen() {
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState<number | null>(null);
 
-  useEffect(() => {
+  const fetchCounts = async () => {
     if (!selected) {
       setCounts({ stocks: 0, ledgers: 0, parties: 0 });
       return;
     }
+    try {
+      setLoading(true);
+      const [stocksRes, ledgersRes, partiesRes] = await Promise.all([
+        getCompanyStocks(selected).catch((e) => { const code = (e as any)?.status; if (typeof code === 'number') setErrorCode(code); return { data: [] }; }),
+        getCompanyLedgers(selected).catch((e) => { const code = (e as any)?.status; if (typeof code === 'number') setErrorCode(code); return { data: [] }; }),
+        getCompanyParties(selected).catch((e) => { const code = (e as any)?.status; if (typeof code === 'number') setErrorCode(code); return { data: [] }; }),
+      ]);
+      setCounts({
+        stocks: stocksRes.data?.length || 0,
+        ledgers: ledgersRes.data?.length || 0,
+        parties: partiesRes.data?.length || 0,
+      });
+    } catch (e) {
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchCounts = async () => {
-      try {
-        setLoading(true);
-        const [stocksRes, ledgersRes, partiesRes] = await Promise.all([
-          getCompanyStocks(selected).catch((e) => { const code = (e as any)?.status; if (typeof code === 'number') setErrorCode(code); return { data: [] }; }),
-          getCompanyLedgers(selected).catch((e) => { const code = (e as any)?.status; if (typeof code === 'number') setErrorCode(code); return { data: [] }; }),
-          getCompanyParties(selected).catch((e) => { const code = (e as any)?.status; if (typeof code === 'number') setErrorCode(code); return { data: [] }; }),
-        ]);
-        
-        setCounts({
-          stocks: stocksRes.data?.length || 0,
-          ledgers: ledgersRes.data?.length || 0,
-          parties: partiesRes.data?.length || 0,
-        });
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchCounts();
+  }, [selected]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') fetchCounts();
+    });
+    return () => { sub.remove(); };
   }, [selected]);
 
   const cards = [

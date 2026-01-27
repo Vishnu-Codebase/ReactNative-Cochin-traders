@@ -1,3 +1,4 @@
+// batches.tsx
 import CompanySelector from '@/components/CompanySelector';
 import { Text, TextInput, View, useThemeColor } from '@/components/Themed';
 import { useCompany } from '@/context/CompanyContext';
@@ -142,7 +143,7 @@ export default function BatchesScreen() {
             <FlatList
               data={filteredStocks}
               scrollEnabled={false}
-              keyExtractor={(item, index) => item.$Name + index}
+              keyExtractor={(item, index) => `${String(item.$Name || item.Name || 'stock')}-${index}`}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.stockItem, { backgroundColor: cardBg, borderColor }]}

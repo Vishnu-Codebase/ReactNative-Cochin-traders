@@ -123,7 +123,7 @@ function StackContent({ showSplash }: { showSplash: boolean }) {
                 headerStyle: { backgroundColor: Colors[theme].navBar },
                 headerTintColor: "#fff",
                 headerRight: () => (
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "transparent" }}>
                     <ThemeToggle />
                     <CompanySelector />
                   </View>
@@ -132,7 +132,10 @@ function StackContent({ showSplash }: { showSplash: boolean }) {
             >
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="cart" options={{ title: "Cart" }} />
-              <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+              <Stack.Screen
+                name="modal"
+                options={{headerShown: true}}
+              />
               <Stack.Screen name="parties" options={{ title: "Parties" }} />
               <Stack.Screen name="ledgers" options={{ title: "Ledgers" }} />
             </Stack>

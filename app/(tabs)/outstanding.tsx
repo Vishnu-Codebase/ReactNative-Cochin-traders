@@ -8,21 +8,22 @@ import { getCompanyParties } from '@/lib/api';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View as DefaultView, FlatList, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default function OutstandingScreen() {
   const [receivables, setReceivables] = useState<any[]>([]);
   const [query, setQuery] = useState('');
-  const { selected } = useCompany();
+  const { selectedCompany } = useCompany();
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState<number | null>(null);
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const cardBg = useThemeColor({}, 'card');
 
-  useEffect(() => {
-    if (!selected) return;
+  const fetchReceivables = async () => {
+    if (!selectedCompany) return;
     setLoading(true);
-    getCompanyParties(selected)
+    getCompanyParties(selectedCompany)
       .then((res: any) => {
         const rows = res && res.data ? res.data : [];
         const debtors = (rows || [])
@@ -38,7 +39,7 @@ export default function OutstandingScreen() {
               name: p.$Name || p.MailingName || p.Name || '',
               closingBalance: Number(p.$ClosingBalance ?? p.ClosingBalance ?? p.Balance ?? 0) || 0,
               openingBalance: Number(p.$OpeningBalance ?? p.OpeningBalance ?? 0) || 0,
-              address,
+              address: p.ADDRESS || 'None',
               parent: p.$Parent || p.Parent || 'N/A',
             };
           });
@@ -51,13 +52,19 @@ export default function OutstandingScreen() {
         setReceivables([]);
       })
       .finally(() => setLoading(false));
-  }, [selected]);
+  };
+
+  useEffect(() => {
+    fetchReceivables();
+  }, [selectedCompany]);
+
+  // Removed AppState refresh to reduce unwanted repeated network calls
 
   const filtered = receivables.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <View style={styles.container}>
-      <ErrorModal visible={!!errorCode} status={errorCode ?? undefined} onClose={() => setErrorCode(null)} onRetry={() => { setErrorCode(null); setLoading(true); getCompanyParties(selected as string).then((res: any) => { const rows = res && res.data ? res.data : []; const debtors = (rows || []).filter((r: any) => { const grp = r.$_PrimaryGroup || r._PrimaryGroup || r.PrimaryGroup || ''; return String(grp).toLowerCase().includes('sundry debtors'); }).map((p: any) => { const addrRaw = p.$Address ?? p.Address ?? p.$ADDRESS; const address = Array.isArray(addrRaw) ? addrRaw.filter(Boolean).join(', ') : String(addrRaw || ''); return { id: String(p.$Name || p.MailingName || p.Name || Math.random()), name: p.$Name || p.MailingName || p.Name || '', closingBalance: Number(p.$ClosingBalance ?? p.ClosingBalance ?? p.Balance ?? 0) || 0, openingBalance: Number(p.$OpeningBalance ?? p.OpeningBalance ?? 0) || 0, address, parent: p.$Parent || p.Parent || 'N/A', }; }); setReceivables(debtors); }).catch(() => setReceivables([])).finally(() => setLoading(false)); }} />
+      <ErrorModal visible={!!errorCode} status={errorCode ?? undefined} onClose={() => setErrorCode(null)} onRetry={() => { setErrorCode(null); setLoading(true); getCompanyParties(selectedCompany as string).then((res: any) => { const rows = res && res.data ? res.data : []; const debtors = (rows || []).filter((r: any) => { const grp = r.$_PrimaryGroup || r._PrimaryGroup || r.PrimaryGroup || ''; return String(grp).toLowerCase().includes('sundry debtors'); }).map((p: any) => { const addrRaw = p.$Address ?? p.Address ?? p.$ADDRESS; const address = Array.isArray(addrRaw) ? addrRaw.filter(Boolean).join(', ') : String(addrRaw || ''); return { id: String(p.$Name || p.MailingName || p.Name || Math.random()), name: p.$Name || p.MailingName || p.Name || '', closingBalance: Number(p.$ClosingBalance ?? p.ClosingBalance ?? p.Balance ?? 0) || 0, openingBalance: Number(p.$OpeningBalance ?? p.OpeningBalance ?? 0) || 0, address, parent: p.$Parent || p.Parent || 'N/A', }; }); setReceivables(debtors); }).catch(() => setReceivables([])).finally(() => setLoading(false)); }} />
       <Stack.Screen options={{
         title: 'Outstanding',
         headerRight: () => (
@@ -88,9 +95,16 @@ export default function OutstandingScreen() {
                 <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.debtorName, { color: textColor }]}>
                   {item.name}
                 </Text>
+              <DefaultView style={styles.amountWrap}>
+                {item.closingBalance < 0 ? (
+                  <Icon name="arrow-downward" size={18} color="#10b981" />
+                ) : item.closingBalance > 0 ? (
+                  <Icon name="arrow-upward" size={18} color="#ef4444" />
+                ) : null}
                 <Text style={[styles.outstandingAmount, { color: textColor }]}>
                   ₹{Math.abs(item.closingBalance || 0).toFixed(2)}
                 </Text>
+              </DefaultView>
               </DefaultView>
 
               <DefaultView style={styles.cardDetails}>
@@ -151,14 +165,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   debtorName: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
     marginRight: 8,
   },
   outstandingAmount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
+  },
+  amountWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   cardDetails: {
     gap: 8,

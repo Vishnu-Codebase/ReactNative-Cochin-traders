@@ -1,14 +1,16 @@
 // components/trader/PunchCard.tsx
 import ErrorModal from "@/components/ErrorModal";
+import ApiResponseMessage from "@/components/ApiResponseMessage";
 import { SkeletonLine } from "@/components/Skeleton";
 import { Text, TextInput, View, useThemeColor } from "@/components/Themed";
 import PunchSuccessModal from "@/components/trader/PunchSuccessModal";
 import ShopInput from "@/components/trader/ShopInput";
 import ShopSuggestions from "@/components/trader/ShopSuggestions";
 import { useCompany } from "@/context/CompanyContext";
-import { getCompanyParties, sendCollection } from "@/lib/api";
+import { getCompanyParties, submitPunchIn } from "@/lib/api";
 import React, { memo, useEffect, useState } from "react";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { useCart } from "@/context/CartContext";
 
 type Props = {
   employeeName?: string | null;
@@ -17,6 +19,7 @@ type Props = {
 
 export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
   const { selected: companyName } = useCompany();
+  const cart = useCart();
   const [shopName, setShopName] = useState("");
   const [amount, setAmount] = useState("");
   const [parties, setParties] = useState<
@@ -32,6 +35,9 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
     time?: string;
   } | null>(null);
   const [errorCode, setErrorCode] = useState<number | null>(null);
+  const [respVisible, setRespVisible] = useState(false);
+  const [respSuccess, setRespSuccess] = useState(true);
+  const [respMessage, setRespMessage] = useState<string | undefined>(undefined);
   const cardBg = useThemeColor({}, "card");
   const borderColor = useThemeColor({}, "tabIconDefault");
   const buttonPrimary = useThemeColor({}, "buttonPrimary");
@@ -67,6 +73,16 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
   const handlePress = async () => {
     if (submitting) return;
 
+    if (!employeePhone || String(employeePhone).trim().length < 10) {
+      Alert.alert("Missing Employee Phone", "Please add employee phone in the dashboard before punching in.");
+      return;
+    }
+
+    if (!companyName || !String(companyName).trim()) {
+      Alert.alert("Missing Company", "Please select a company before punching in.");
+      return;
+    }
+
     if (!shopName.trim()) {
       Alert.alert(
         "Missing Shop",
@@ -76,36 +92,34 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
     }
 
     const amt = Number(amount || 0) || 0;
-    if (amt <= 0) {
-      Alert.alert(
-        "Missing Amount",
-        "Please enter a valid amount before punching in.",
-      );
-      return;
-    }
 
     // Location not required
 
     const now = new Date();
     const payload = {
+      employeeName: employeeName ?? "",
+      employeePhone: employeePhone ?? "",
+      companyName: companyName ?? "",
       shopName: shopName.trim(),
       amount: amt,
-      empId: employeePhone ?? undefined,
-      employeeName: employeeName ?? undefined,
-      companyName: companyName ?? undefined,
-      location: "None",
+      time: now.toLocaleTimeString(),
+      date: now.toLocaleDateString(),
     };
 
     try {
       setSubmitting(true);
       console.log("📤 Submitting punch in:", payload);
-      await sendCollection(payload);
+      const result = await submitPunchIn(payload);
       console.log("✅ Punch in successful");
+      setRespSuccess(true);
+      setRespMessage(String(result?.message || "Punch in recorded successfully"));
+      setRespVisible(true);
       setSuccessInfo({
         shopName: shopName.trim(),
         amount: amt,
         time: now.toLocaleTimeString(),
       });
+      cart.setOrdered(true);
       setShowSuccess(true);
       setShopName("");
       setAmount("");
@@ -113,7 +127,12 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
       console.error("❌ Punch in error:", error);
       const msg = String((error as any)?.message || error);
       const code = typeof (error as any)?.status === "number" ? (error as any).status : (msg.match(/(\d{3})/) ? Number(msg.match(/(\d{3})/)![1]) : null);
-      if (code) setErrorCode(code);
+      if (code) {
+        setErrorCode(code)
+        setRespSuccess(false);
+        setRespMessage(msg);
+        setRespVisible(true);
+      }
       else Alert.alert("Error", "Failed to submit punch. Please try again.");
     } finally {
       setSubmitting(false);
@@ -121,6 +140,14 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
   };
   return (
     <React.Fragment>
+      <ApiResponseMessage
+        visible={respVisible}
+        success={respSuccess}
+        title={respSuccess ? "✓ Punch In Successful" : "Punch In Error"}
+        message={respMessage}
+        details={respSuccess ? { Employee: employeeName || "", Shop: successInfo?.shopName || "", Amount: successInfo?.amount } : undefined}
+        onClose={() => setRespVisible(false)}
+      />
       <ErrorModal visible={!!errorCode} status={errorCode ?? undefined} onClose={() => setErrorCode(null)} onRetry={() => { setErrorCode(null); handlePress(); }} />
       <View style={[styles.card, { backgroundColor: cardBg }]}>
         <Text style={styles.title}>Punch In</Text>
@@ -197,14 +224,6 @@ export default memo(function PunchCard({ employeeName, employeePhone }: Props) {
           </Text>
         </TouchableOpacity>
       </View>
-      <PunchSuccessModal
-        visible={showSuccess}
-        shopName={successInfo?.shopName}
-        amount={successInfo?.amount}
-        onClose={() => setShowSuccess(false)}
-        employeeName={employeeName || ""}
-        time={successInfo?.time || ""}
-      />
     </React.Fragment>
   );
 });

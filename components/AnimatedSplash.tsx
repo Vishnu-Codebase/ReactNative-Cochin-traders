@@ -132,9 +132,9 @@ const styles = StyleSheet.create({
     height: 90,
     marginBottom: 4,
     backgroundColor: "transparent",
-    borderWidth: 6,
-    borderColor: "#ffffff",
-    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "transparent",
+    borderRadius: 20,
   },
   companyName: {
     fontSize: 26,

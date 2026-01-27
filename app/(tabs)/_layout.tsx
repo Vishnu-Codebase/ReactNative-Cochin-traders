@@ -1,3 +1,4 @@
+// (tabs)_layout.tsx
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, Tabs } from "expo-router";
 import React from "react";
@@ -28,7 +29,7 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: Colors[colorScheme ?? "light"].navBar,
             paddingBottom: 13,
-            paddingTop: 6,
+            paddingTop: 2,
             height: 64,
           },
           tabBarLabelStyle: { fontSize: 12, paddingBottom: 2 },
