@@ -16,15 +16,33 @@
       "env": {
         "BASE_URL": "$BASE_URL",
         "EXPO_PUBLIC_GEOAPIFY_API_KEY": "$EXPO_PUBLIC_GEOAPIFY_API_KEY",
-        "API_KEY": "$API_KEY"
+        "API_KEY": "$API_KEY",
+        "apiKey": "$apiKey",
+        "authDomain": "$authDomain",
+        "databaseURL": "$databaseURL",
+        "projectId": "$projectId",
+        "storageBucket": "$storageBucket",
+        "messagingSenderId": "$messagingSenderId",
+        "appId": "$appId",
+        "measurementId": "$measurementId"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "BASE_URL": "$BASE_URL",
+        "EXPO_PUBLIC_BASE_URL": "$EXPO_PUBLIC_BASE_URL",
         "EXPO_PUBLIC_GEOAPIFY_API_KEY": "$EXPO_PUBLIC_GEOAPIFY_API_KEY",
-        "API_KEY": "$API_KEY"
+        "API_KEY": "$API_KEY",
+        "EXPO_PUBLIC_API_KEY": "$EXPO_PUBLIC_API_KEY",
+        "apiKey": "$apiKey",
+        "authDomain": "$authDomain",
+        "databaseURL": "$databaseURL",
+        "projectId": "$projectId",
+        "storageBucket": "$storageBucket",
+        "messagingSenderId": "$messagingSenderId",
+        "appId": "$appId",
+        "measurementId": "$measurementId"
       }
     }
   },
